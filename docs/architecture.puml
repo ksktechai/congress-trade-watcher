@@ -1,0 +1,81 @@
+@startuml congress-trade-watcher
+title Congress Trade Watcher — Architecture\n(research tool, NOT financial advice)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+actor "Operator / cURL" as user
+cloud "Finnhub API\n(trades + quotes)" as finnhub
+cloud "Anthropic Claude API\n(/v1/messages)" as anthropic
+database "PostgreSQL 16\n(Flyway-managed)" as pg
+
+rectangle "congress-trade-watcher (Quarkus)" {
+
+  component "IngestionScheduler\n@Scheduled (cron)\nOFF in dev/test" as scheduler
+
+  package "REST API (JAX-RS)" {
+    component "TradeResource" as trades
+    component "MemberResource" as members
+    component "SignalResource" as signals
+    component "DigestResource" as digest
+    component "AdminResource\nPOST /admin/ingest" as admin
+  }
+
+  package "Service layer" {
+    component "TradeIngestionService\n(idempotent upsert)" as ingest
+    component "SignalDetectionService\n**PURE CODE** — no LLM" as detect
+    component "PerformanceTrackingService" as perf
+    component "LlmInsightService\nnarration only" as llm
+  }
+
+  package "Clients (fault-tolerance ring:\n@Retry + @Timeout + @CircuitBreaker)" as ftring {
+    component "FinnhubClient" as finnClient
+    component "AnthropicClient" as anthClient
+  }
+
+  package "Repositories (Panache)" {
+    component "Trade / Member /\nSignal / Watchlist" as repos
+  }
+
+  component "Digest cache\n(@CacheResult, per day)" as cache
+}
+
+user --> trades
+user --> members
+user --> signals
+user --> digest
+user --> admin
+
+scheduler --> ingest
+admin --> ingest
+ingest --> finnClient
+ingest --> repos
+
+trades --> repos
+members --> repos
+signals --> detect
+detect --> repos
+
+digest --> cache
+cache --> llm
+llm --> anthClient
+perf --> finnClient
+
+finnClient --> finnhub
+anthClient --> anthropic
+repos --> pg
+
+note bottom of detect
+  CLUSTER · OUTLIER ·
+  LATE_DISCLOSURE ·
+  SECTOR_CONCENTRATION
+  (deterministic, unit-tested)
+end note
+
+note right of llm
+  Summarises/contextualises
+  computed data only.
+  No buy/sell, no predictions.
+end note
+@enduml

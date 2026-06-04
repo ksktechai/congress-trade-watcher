@@ -1,0 +1,58 @@
+package nz.co.ksktech.congresstrades.domain;
+
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import nz.co.ksktech.congresstrades.domain.enums.Chamber;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * A member of the US Congress who has filed STOCK Act disclosures.
+ *
+ * <p>Uses the Panache "public fields" convention. The identifier strategy is
+ * IDENTITY so it maps cleanly onto the Flyway-managed {@code BIGINT GENERATED
+ * BY DEFAULT AS IDENTITY} primary key under Hibernate schema {@code validate}.</p>
+ */
+@Entity
+@Table(name = "members")
+public class Member extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
+    @Column(name = "full_name", nullable = false, unique = true, length = 255)
+    public String fullName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    public Chamber chamber = Chamber.UNKNOWN;
+
+    @Column(length = 50)
+    public String party;
+
+    @Column(length = 50)
+    public String state;
+
+    @OneToMany(mappedBy = "member")
+    public List<Trade> trades = new ArrayList<>();
+
+    public Member() {
+    }
+
+    public Member(String fullName, Chamber chamber, String party, String state) {
+        this.fullName = fullName;
+        this.chamber = chamber;
+        this.party = party;
+        this.state = state;
+    }
+}

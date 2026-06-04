@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: congress-postgres
+    environment:
+      POSTGRES_DB: congress
+      POSTGRES_USER: congress_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-congress_secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - congress_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U congress_app -d congress"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Optional: a web UI for poking at the database. Start with:
+  #   docker compose --profile tools up -d
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: congress-pgadmin
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@congress.local
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  congress_pgdata:
