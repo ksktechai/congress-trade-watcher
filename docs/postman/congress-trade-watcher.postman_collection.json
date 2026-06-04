@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "208293fb-64b1-4daa-a4d5-eed40ec89e1c",
+    "_postman_id": "1b4eb72f-713a-423f-a5c9-54deeda961d5",
     "name": "congress-trade-watcher",
     "description": "Congress Trade Watcher API. Research tool, NOT financial advice. Set the {{baseUrl}} collection variable to point at your environment (default http://localhost:8080).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -14,8 +14,66 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/trades",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "trades"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-all-tickers-reactive",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "text/event-stream",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/reactive/tickers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "reactive",
+            "tickers"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-all-trades-by-ticker-reactive",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/reactive/trades?ticker=GOOGL",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "reactive",
+            "trades"
+          ],
+          "query": [
+            {
+              "key": "ticker",
+              "value": "GOOGL"
+            }
+          ]
         }
       },
       "response": []
@@ -27,11 +85,23 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/trades?member=Donald J Trump&type=PURCHASE",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "trades"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ],
           "query": [
-            { "key": "member", "value": "Donald J Trump" },
-            { "key": "type", "value": "PURCHASE" }
+            {
+              "key": "member",
+              "value": "Donald J Trump"
+            },
+            {
+              "key": "type",
+              "value": "PURCHASE"
+            }
           ]
         }
       },
@@ -44,10 +114,19 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/trades?ticker=AAPL",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "trades"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ],
           "query": [
-            { "key": "ticker", "value": "AAPL" }
+            {
+              "key": "ticker",
+              "value": "AAPL"
+            }
           ]
         }
       },
@@ -58,16 +137,28 @@
       "request": {
         "method": "GET",
         "header": [],
-        "description": "Filter trades by transaction date (ISO yyyy-MM-dd). from/to are inclusive.",
         "url": {
           "raw": "{{baseUrl}}/api/v1/trades?from=2026-01-01&to=2026-06-30",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "trades"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ],
           "query": [
-            { "key": "from", "value": "2026-01-01" },
-            { "key": "to", "value": "2026-06-30" }
+            {
+              "key": "from",
+              "value": "2026-01-01"
+            },
+            {
+              "key": "to",
+              "value": "2026-06-30"
+            }
           ]
-        }
+        },
+        "description": "Filter trades by transaction date (ISO yyyy-MM-dd). from/to are inclusive."
       },
       "response": []
     },
@@ -78,8 +169,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/members",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "members"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "members"
+          ]
         }
       },
       "response": []
@@ -89,12 +186,20 @@
       "request": {
         "method": "GET",
         "header": [],
-        "description": "Exact full name (URL-encoded). Use a name from get-all-congress-members.",
         "url": {
           "raw": "{{baseUrl}}/api/v1/members/Donald J Trump/trades",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "members", "Donald J Trump", "trades"]
-        }
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "members",
+            "Donald J Trump",
+            "trades"
+          ]
+        },
+        "description": "Exact full name (URL-encoded). Use a name from get-all-congress-members."
       },
       "response": []
     },
@@ -105,8 +210,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/signals",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "signals"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "signals"
+          ]
         }
       },
       "response": []
@@ -116,16 +227,28 @@
       "request": {
         "method": "GET",
         "header": [],
-        "description": "type = CLUSTER | OUTLIER | LATE_DISCLOSURE | SECTOR_CONCENTRATION",
         "url": {
           "raw": "{{baseUrl}}/api/v1/signals?ticker=GOOGL&type=OUTLIER",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "signals"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "signals"
+          ],
           "query": [
-            { "key": "ticker", "value": "GOOGL" },
-            { "key": "type", "value": "OUTLIER" }
+            {
+              "key": "ticker",
+              "value": "GOOGL"
+            },
+            {
+              "key": "type",
+              "value": "OUTLIER"
+            }
           ]
-        }
+        },
+        "description": "type = CLUSTER | OUTLIER | LATE_DISCLOSURE | SECTOR_CONCENTRATION"
       },
       "response": []
     },
@@ -134,12 +257,19 @@
       "request": {
         "method": "POST",
         "header": [],
-        "description": "Re-run pure-code signal detection over the look-back window and persist the results.",
         "url": {
           "raw": "{{baseUrl}}/api/v1/signals/detect",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "signals", "detect"]
-        }
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "signals",
+            "detect"
+          ]
+        },
+        "description": "Re-run pure-code signal detection over the look-back window and persist the results."
       },
       "response": []
     },
@@ -148,15 +278,25 @@
       "request": {
         "method": "GET",
         "header": [],
-        "description": "LLM-narrated daily digest. ?refresh=true bypasses the per-day cache and forces a fresh LLM call.",
         "url": {
           "raw": "{{baseUrl}}/api/v1/digest/daily?refresh=true",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "digest", "daily"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "digest",
+            "daily"
+          ],
           "query": [
-            { "key": "refresh", "value": "true" }
+            {
+              "key": "refresh",
+              "value": "true"
+            }
           ]
-        }
+        },
+        "description": "LLM-narrated daily digest. ?refresh=true bypasses the per-day cache and forces a fresh LLM call."
       },
       "response": []
     },
@@ -165,12 +305,19 @@
       "request": {
         "method": "POST",
         "header": [],
-        "description": "Ingest the whole watchlist from the default free source (congress.kadoa.com).",
         "url": {
           "raw": "{{baseUrl}}/api/v1/admin/ingest",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "admin", "ingest"]
-        }
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "ingest"
+          ]
+        },
+        "description": "Ingest the whole watchlist from the default free source (congress.kadoa.com)."
       },
       "response": []
     },
@@ -179,15 +326,25 @@
       "request": {
         "method": "POST",
         "header": [],
-        "description": "Ingest just one symbol from the default free source.",
         "url": {
           "raw": "{{baseUrl}}/api/v1/admin/ingest?ticker=AAPL",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "admin", "ingest"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "ingest"
+          ],
           "query": [
-            { "key": "ticker", "value": "AAPL" }
+            {
+              "key": "ticker",
+              "value": "AAPL"
+            }
           ]
-        }
+        },
+        "description": "Ingest just one symbol from the default free source."
       },
       "response": []
     },
@@ -196,15 +353,25 @@
       "request": {
         "method": "POST",
         "header": [],
-        "description": "Ingest via Finnhub instead of the default congress source. Requires a paid FINNHUB_API_KEY (the congressional endpoint is premium; a free key returns 403).",
         "url": {
           "raw": "{{baseUrl}}/api/v1/admin/ingest?source=finnhub",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "admin", "ingest"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "ingest"
+          ],
           "query": [
-            { "key": "source", "value": "finnhub" }
+            {
+              "key": "source",
+              "value": "finnhub"
+            }
           ]
-        }
+        },
+        "description": "Ingest via Finnhub instead of the default congress source. Requires a paid FINNHUB_API_KEY (the congressional endpoint is premium; a free key returns 403)."
       },
       "response": []
     },
@@ -213,12 +380,18 @@
       "request": {
         "method": "GET",
         "header": [],
-        "description": "SmallRye health readiness (includes a DB check).",
         "url": {
           "raw": "{{baseUrl}}/q/health/ready",
-          "host": ["{{baseUrl}}"],
-          "path": ["q", "health", "ready"]
-        }
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "q",
+            "health",
+            "ready"
+          ]
+        },
+        "description": "SmallRye health readiness (includes a DB check)."
       },
       "response": []
     }
@@ -226,8 +399,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080",
-      "type": "string"
+      "value": "http://localhost:8080"
     }
   ]
 }
