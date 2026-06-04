@@ -63,9 +63,13 @@ public class CongressDataIngestionService {
 
     private void ingestTicker(String ticker, IngestionResult result) {
         String symbol = ticker.toUpperCase();
+        LOG.infof("INGEST REQUEST  → congress-data GET /data/ticker/%s.json", symbol);
+        long start = System.currentTimeMillis();
         CongressTickerTrades response = congressDataClient.getTickerTrades(symbol);
         List<CongressTrade> trades = response.trades();
         result.tradesFetched += trades.size();
+        LOG.infof("INGEST RESPONSE ← congress-data %s: %d trades (%dms)",
+                symbol, trades.size(), System.currentTimeMillis() - start);
 
         QuarkusTransaction.requiringNew().run(() -> {
             for (CongressTrade raw : trades) {

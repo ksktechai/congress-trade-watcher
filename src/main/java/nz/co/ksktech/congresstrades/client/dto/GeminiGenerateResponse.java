@@ -1,6 +1,7 @@
 package nz.co.ksktech.congresstrades.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -10,7 +11,8 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GeminiGenerateResponse(
-        List<Candidate> candidates
+        List<Candidate> candidates,
+        @JsonProperty("usageMetadata") UsageMetadata usageMetadata
 ) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Candidate(Content content, String finishReason) {
@@ -22,6 +24,15 @@ public record GeminiGenerateResponse(
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Part(String text) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record UsageMetadata(
+            @JsonProperty("promptTokenCount") Integer promptTokenCount,
+            @JsonProperty("candidatesTokenCount") Integer candidatesTokenCount,
+            @JsonProperty("thoughtsTokenCount") Integer thoughtsTokenCount,
+            @JsonProperty("totalTokenCount") Integer totalTokenCount
+    ) {
     }
 
     /**
@@ -42,5 +53,11 @@ public record GeminiGenerateResponse(
             }
         }
         return sb.toString();
+    }
+
+    /** Short {@code finishReason} of the first candidate, for logging. */
+    public String finishReason() {
+        return (candidates == null || candidates.isEmpty() || candidates.get(0) == null)
+                ? null : candidates.get(0).finishReason();
     }
 }

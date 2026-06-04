@@ -6,32 +6,32 @@ skinparam shadowing false
 skinparam defaultTextAlignment center
 
 actor "Operator / cURL" as user
-cloud "Finnhub API\n(trades + quotes)" as finnhub
-cloud "Anthropic Claude API\n(/v1/messages)" as anthropic
+
+cloud "Congress Trading Monitor\ncongress.kadoa.com\n(FREE, no key — DEFAULT)" as congress
+cloud "Finnhub API\n(premium, optional)" as finnhub
+cloud "Google Gemini API\n(FREE — default narrator)" as gemini
+cloud "Anthropic Claude API\n(optional narrator)" as anthropic
 database "PostgreSQL 16\n(Flyway-managed)" as pg
 
 rectangle "congress-trade-watcher (Quarkus)" {
 
   component "IngestionScheduler\n@Scheduled (cron)\nOFF in dev/test" as scheduler
 
-  package "REST API (JAX-RS)" {
-    component "TradeResource" as trades
-    component "MemberResource" as members
-    component "SignalResource" as signals
-    component "DigestResource" as digest
-    component "AdminResource\nPOST /admin/ingest" as admin
+  package "REST API (JAX-RS)\n+ ApiAccessLoggingFilter (req/resp logs)" {
+    component "Trade / Member /\nSignal / Digest / Admin\nresources" as api
   }
 
-  package "Service layer" {
-    component "TradeIngestionService\n(idempotent upsert)" as ingest
+  package "Ingestion sources (pluggable: ingestion.source)" {
+    component "CongressDataIngestionService\n(default)" as congressIngest
+    component "TradeIngestionService\n(Finnhub)" as finnhubIngest
+  }
+
+  component "TradeUpsertService\n(idempotent upsert,\nsourceFilingId)" as upsert
+
+  package "Analysis & digest" {
     component "SignalDetectionService\n**PURE CODE** — no LLM" as detect
+    component "LlmInsightService\n+ LlmProvider (pluggable)\nnarration only" as llm
     component "PerformanceTrackingService" as perf
-    component "LlmInsightService\nnarration only" as llm
-  }
-
-  package "Clients (fault-tolerance ring:\n@Retry + @Timeout + @CircuitBreaker)" as ftring {
-    component "FinnhubClient" as finnClient
-    component "AnthropicClient" as anthClient
   }
 
   package "Repositories (Panache)" {
@@ -41,29 +41,32 @@ rectangle "congress-trade-watcher (Quarkus)" {
   component "Digest cache\n(@CacheResult, per day)" as cache
 }
 
-user --> trades
-user --> members
-user --> signals
-user --> digest
-user --> admin
+note right of congressIngest
+  Clients carry the fault-tolerance ring:
+  @Retry + @Timeout + @CircuitBreaker
+end note
 
-scheduler --> ingest
-admin --> ingest
-ingest --> finnClient
-ingest --> repos
+user --> api
+scheduler --> congressIngest
+api --> congressIngest
+api --> finnhubIngest
 
-trades --> repos
-members --> repos
-signals --> detect
+congressIngest --> congress
+finnhubIngest --> finnhub
+congressIngest --> upsert
+finnhubIngest --> upsert
+upsert --> repos
+
+api --> repos
+api --> detect
 detect --> repos
 
-digest --> cache
+api --> cache
 cache --> llm
-llm --> anthClient
-perf --> finnClient
+llm --> gemini
+llm --> anthropic
+perf --> finnhub
 
-finnClient --> finnhub
-anthClient --> anthropic
 repos --> pg
 
 note bottom of detect
@@ -77,5 +80,6 @@ note right of llm
   Summarises/contextualises
   computed data only.
   No buy/sell, no predictions.
+  Provider via watcher.llm.provider.
 end note
 @enduml

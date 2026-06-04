@@ -71,6 +71,17 @@ also defensively truncates strings to column widths — real PDF-parsed data can
 very long/noisy. To add a source: new client + DTOs + an ingestion service that
 builds `NormalizedTrade`s; wire it into `AdminResource` and `IngestionScheduler`.
 
+## Logging / call tracing
+
+The call sequence is logged at INFO so you can follow it in the console:
+`API REQUEST/RESPONSE` (`ApiAccessLoggingFilter`, skips `/q/*`),
+`INGEST REQUEST/RESPONSE` (per ticker), `DIGEST step 1..3/3`, and
+`LLM REQUEST/RESPONSE` (provider, model, char counts, token usage, timing,
+finishReason). In `%dev` the app package is DEBUG, which also prints the **full
+LLM prompts and response bodies**. **Never log API keys** — that's why we use
+app-level logging instead of Quarkus's blanket REST-client logging (which would
+dump the `x-api-key`/`X-goog-api-key` headers and Finnhub's `?token=`).
+
 ## LLM provider (narration only)
 
 The digest narrator is pluggable via `watcher.llm.provider` (`LLM_PROVIDER` env),

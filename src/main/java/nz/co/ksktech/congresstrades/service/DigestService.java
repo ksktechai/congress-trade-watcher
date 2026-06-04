@@ -11,6 +11,7 @@ import nz.co.ksktech.congresstrades.config.Disclaimers;
 import nz.co.ksktech.congresstrades.domain.Signal;
 import nz.co.ksktech.congresstrades.domain.Trade;
 import nz.co.ksktech.congresstrades.repository.TradeRepository;
+import org.jboss.logging.Logger;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,6 +26,8 @@ import java.util.List;
  */
 @ApplicationScoped
 public class DigestService {
+
+    private static final Logger LOG = Logger.getLogger(DigestService.class);
 
     @Inject
     TradeRepository tradeRepository;
@@ -43,13 +46,18 @@ public class DigestService {
      */
     @CacheResult(cacheName = "daily-digest")
     public DigestResponse dailyDigest(LocalDate date) {
+        LOG.infof("DIGEST build start for %s (cache miss; look-back=%d days)",
+                date, appConfig.signals().lookbackDays());
         LocalDate since = date.minusDays(appConfig.signals().lookbackDays());
         List<Trade> trades = loadTrades(since);
+        LOG.infof("DIGEST step 1/3 — loaded %d trades disclosed since %s", trades.size(), since);
 
         // Refresh signals from current data, then read them back.
         List<Signal> signals = signalService.detectAndPersist();
+        LOG.infof("DIGEST step 2/3 — detected %d signals", signals.size());
 
         String narrative = llmInsightService.generateNarrative(date, trades, signals);
+        LOG.infof("DIGEST step 3/3 — narrative generated (%d chars); caching for %s", narrative.length(), date);
 
         List<SignalDto> signalDtos = signals.stream().map(SignalDto::from).toList();
         return new DigestResponse(date, narrative, trades.size(), signalDtos, Disclaimers.NOT_FINANCIAL_ADVICE);
