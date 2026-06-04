@@ -1,0 +1,70 @@
+@startuml query-sequence
+title Read endpoints — call sequence\nGET /trades · /members · /members/{name}/trades · /signals
+
+skinparam backgroundColor #FCFCFD
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #455A64
+skinparam ArrowFontColor #37474F
+skinparam sequenceLifeLineBorderColor #CFD8DC
+skinparam sequenceLifeLineBackgroundColor #F4F6F8
+skinparam noteBackgroundColor #FFF8E1
+skinparam noteBorderColor #E0C46C
+skinparam participant {
+  BorderColor #546E7A
+  FontColor #FFFFFF
+  FontStyle bold
+}
+
+actor "Client / cURL" as C #607D8B
+participant "Trade / Member / Signal\nResource + Access-log filter" as API #4C78A8
+participant "Panache Repository\n(@Transactional read)" as REPO #C0566B
+database "PostgreSQL" as DB #43A047
+
+C -> API: GET /api/v1/...  (query/path params)
+activate API
+note right of API #ECEFF1: log: API REQUEST →
+
+alt GET /trades?member=&ticker=&type=&from=&to=
+  API -> REPO: search(filters)
+  REPO -> DB: SELECT trades (+ eager member)\nindexes: ticker, member, transaction_date
+  DB -->> REPO: rows
+  REPO -->> API: List<Trade>
+
+else GET /members
+  API -> REPO: listAll()
+  REPO -> DB: SELECT members
+  DB -->> REPO: rows
+  REPO -->> API: List<Member>
+
+else GET /members/{name}/trades
+  API -> REPO: findByFullName(name)
+  REPO -> DB: SELECT member
+  alt member not found
+    DB -->> REPO: (none)
+    REPO -->> API: empty
+    API -->> C: 404 ErrorResponse\n(GlobalExceptionMapper)
+  else found
+    API -> REPO: findByMemberFullName(name)
+    REPO -> DB: SELECT trades WHERE member
+    DB -->> REPO: rows
+    REPO -->> API: List<Trade>
+  end
+
+else GET /signals?type=&ticker=
+  API -> REPO: search(type, ticker)
+  REPO -> DB: SELECT signals
+  DB -->> REPO: rows
+  REPO -->> API: List<Signal>
+end
+
+API -> API: map entities → DTOs\n(no JPA proxies leak out)
+API -->> C: 200 application/json
+note right of API #ECEFF1: log: API RESPONSE ← 200
+deactivate API
+
+note across #FFFDE7
+  Reads are thin: resource → repository → DTO. No external calls, no LLM.
+  All output is research data — NOT financial advice.
+end note
+@enduml

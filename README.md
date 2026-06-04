@@ -126,21 +126,33 @@ curl "http://localhost:8080/api/v1/digest/daily?refresh=true"  # bypass cache, f
 
 ### Diagrams
 
-| Diagram | Source | Rendered |
-|---|---|---|
-| Component / architecture | [`architecture.puml`](docs/architecture.puml) · [`architecture.drawio`](docs/architecture.drawio) | [`architecture.png`](docs/architecture.png) |
-| Daily digest — call sequence | [`sequence-digest.puml`](docs/sequence-digest.puml) | [`sequence-digest.png`](docs/sequence-digest.png) |
-| Ingestion — call sequence | [`sequence-ingestion.puml`](docs/sequence-ingestion.puml) | [`sequence-ingestion.png`](docs/sequence-ingestion.png) |
+Sequence diagrams cover **every REST endpoint**:
+
+| Diagram | Endpoint(s) | Source | Rendered |
+|---|---|---|---|
+| Component / architecture | — | [`.puml`](docs/architecture.puml) · [`.drawio`](docs/architecture.drawio) | [png](docs/architecture.png) |
+| Daily digest | `GET /digest/daily` | [`.puml`](docs/sequence-digest.puml) | [png](docs/sequence-digest.png) |
+| Ingestion | `POST /admin/ingest` | [`.puml`](docs/sequence-ingestion.puml) | [png](docs/sequence-ingestion.png) |
+| Read endpoints | `GET /trades` · `/members` · `/members/{name}/trades` · `/signals` | [`.puml`](docs/sequence-query.puml) | [png](docs/sequence-query.png) |
+| Signal detection | `POST /signals/detect` | [`.puml`](docs/sequence-signals-detect.puml) | [png](docs/sequence-signals-detect.png) |
 
 ![Architecture](docs/architecture.png)
 
-**Daily digest call sequence** (mirrors the `API/DIGEST/LLM REQUEST/RESPONSE` log lines):
+**Daily digest** (mirrors the `API/DIGEST/LLM REQUEST/RESPONSE` log lines):
 
 ![Digest sequence](docs/sequence-digest.png)
 
-**Ingestion call sequence:**
+**Ingestion:**
 
 ![Ingestion sequence](docs/sequence-ingestion.png)
+
+**Read endpoints (trades / members / signals):**
+
+![Query sequence](docs/sequence-query.png)
+
+**Signal detection:**
+
+![Signal detection sequence](docs/sequence-signals-detect.png)
 
 > PNGs are rendered from the `.puml` sources with PlantUML
 > (`java -jar plantuml.jar docs/*.puml`); regenerate them if you change a `.puml`.

@@ -1,0 +1,60 @@
+@startuml signals-detect-sequence
+title Signal detection — call sequence\nPOST /api/v1/signals/detect
+
+skinparam backgroundColor #FCFCFD
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #455A64
+skinparam ArrowFontColor #37474F
+skinparam sequenceLifeLineBorderColor #CFD8DC
+skinparam sequenceLifeLineBackgroundColor #F4F6F8
+skinparam noteBackgroundColor #FFF8E1
+skinparam noteBorderColor #E0C46C
+skinparam participant {
+  BorderColor #546E7A
+  FontColor #FFFFFF
+  FontStyle bold
+}
+
+actor "Client / cURL" as C #607D8B
+participant "SignalResource\n+ Access-log filter" as API #4C78A8
+participant "SignalService\n(@Transactional)" as SS #8E6FB0
+participant "SignalDetectionService\nPURE CODE — no LLM" as SD #5AA469
+participant "Trade / Signal\nrepositories" as REPO #C0566B
+database "PostgreSQL" as DB #43A047
+
+C -> API: POST /api/v1/signals/detect
+activate API
+note right of API #ECEFF1: log: API REQUEST →
+
+API -> SS: detectAndPersist()
+activate SS
+SS -> REPO: trades disclosed in last 45 days
+REPO -> DB: SELECT trades
+DB -->> SS: trades
+
+SS -> SD: detectAll(trades)
+activate SD
+note right of SD #ECEFF1
+  Deterministic rules (no DB, no LLM):
+  CLUSTER · OUTLIER ·
+  LATE_DISCLOSURE · SECTOR_CONCENTRATION
+end note
+SD -->> SS: signals
+deactivate SD
+
+SS -> REPO: deleteAll() then persist(signals)
+REPO -> DB: DELETE signals; INSERT signals
+SS -->> API: persisted signals
+deactivate SS
+
+API -> API: map → SignalDto
+API -->> C: 200 application/json
+note right of API #ECEFF1: log: API RESPONSE ← 200
+deactivate API
+
+note across #FFFDE7
+  Signals are produced entirely by deterministic code.
+  The LLM never produces a signal — it only narrates them in the digest.
+end note
+@enduml
