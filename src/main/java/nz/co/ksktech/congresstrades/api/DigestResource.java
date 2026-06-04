@@ -1,8 +1,10 @@
 package nz.co.ksktech.congresstrades.api;
 
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import nz.co.ksktech.congresstrades.api.dto.DigestResponse;
 import nz.co.ksktech.congresstrades.service.DigestService;
@@ -28,8 +30,12 @@ public class DigestResource {
     @GET
     @Path("/daily")
     @Operation(summary = "Daily digest: LLM narrative over computed trades and signals, plus disclaimer. "
-            + "Result is cached per day so repeated calls do not re-bill the LLM API.")
-    public DigestResponse daily() {
+            + "Cached per day so repeated calls do not re-bill the LLM. Pass ?refresh=true to force a "
+            + "fresh LLM call (and the full request/response log sequence).")
+    public DigestResponse daily(@QueryParam("refresh") @DefaultValue("false") boolean refresh) {
+        if (refresh) {
+            digestService.clearCache();
+        }
         return digestService.dailyDigest(LocalDate.now());
     }
 }

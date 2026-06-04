@@ -1,5 +1,6 @@
 package nz.co.ksktech.congresstrades.service;
 
+import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -44,6 +45,15 @@ public class DigestService {
     /**
      * Generate (or return cached) digest for the given date.
      */
+    /**
+     * Evicts all cached digests so the next call re-runs the pipeline (and the
+     * LLM). Used by {@code ?refresh=true} on the digest endpoint.
+     */
+    @CacheInvalidateAll(cacheName = "daily-digest")
+    public void clearCache() {
+        LOG.info("DIGEST cache cleared — next request will regenerate");
+    }
+
     @CacheResult(cacheName = "daily-digest")
     public DigestResponse dailyDigest(LocalDate date) {
         LOG.infof("DIGEST build start for %s (cache miss; look-back=%d days)",
