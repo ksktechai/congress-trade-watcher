@@ -1,9 +1,14 @@
 # Congress Trade Watcher
 
 A Quarkus 3 application that ingests US Congressional stock-trade disclosures
-(STOCK Act filings via the **Finnhub** API), persists and analyses them in
-**PostgreSQL**, detects rule-based research patterns in pure code, and generates
-a plain-English daily digest using the **Anthropic Claude** API.
+(STOCK Act filings), persists and analyses them in **PostgreSQL**, detects
+rule-based research patterns in pure code, and generates a plain-English daily
+digest with an LLM.
+
+Both the data source and the LLM are **pluggable**, and the defaults are **free
+and need no paid key**: real disclosures from the open **Congress Trading Monitor**
+dataset (congress.kadoa.com), narrated by **Google Gemini**. Finnhub (data) and
+Anthropic Claude (narration) are optional alternatives.
 
 > ## ⚠️ This is a research and learning tool — NOT financial advice
 >
@@ -23,16 +28,18 @@ a plain-English daily digest using the **Anthropic Claude** API.
   On JDKs newer than the extensions officially support (e.g. 25), Hibernate's
   ByteBuddy needs its *experimental* flag; that is pre-wired in `.mvn/jvm.config`
   and the Surefire/Failsafe config, so `./mvnw verify` still runs there too.
+  `quarkus:dev` and IDE runs fork a JVM that does **not** inherit `.mvn/jvm.config`,
+  so on JDK 25 add `-Dnet.bytebuddy.experimental=true` to the run config (or just
+  use JDK 21).
 - **Docker** + **Docker Compose** (PostgreSQL, and Testcontainers for the test suite).
 - Maven is **not** required — use the bundled `./mvnw` wrapper.
 
 ## Quick start
 
 ```bash
-# 1. Configure secrets (never committed)
-cp .env.example .env          # then edit .env with your real keys
-export FINNHUB_API_KEY=...     # https://finnhub.io  (free signup)
-export ANTHROPIC_API_KEY=...   # https://console.anthropic.com
+# 1. One free key — Gemini (the default data source needs no key). Never committed.
+cp .env.example .env
+#    put GEMINI_API_KEY=...  in .env   (https://aistudio.google.com/apikey)
 
 # 2. Start PostgreSQL
 docker compose up -d
@@ -40,8 +47,12 @@ docker compose up -d
 # 3. Build, run tests (Testcontainers + WireMock — no real API calls), and package
 ./mvnw verify
 
-# 4. Run the app in dev mode (live reload; scheduler disabled in dev)
+# 4. Run the app in dev mode (live reload, scheduler off, auto-loads .env)
 ./mvnw quarkus:dev
+
+# 5. Pull real disclosures into Postgres, then read the LLM digest
+curl -X POST "http://localhost:8080/api/v1/admin/ingest"
+curl "http://localhost:8080/api/v1/digest/daily"
 ```
 
 The API is then at <http://localhost:8080>, with:
@@ -97,9 +108,9 @@ curl "http://localhost:8080/api/v1/trades"
 curl "http://localhost:8080/api/v1/trades?ticker=AAPL&type=PURCHASE"
 curl "http://localhost:8080/api/v1/trades?member=Pelosi&from=2026-01-01&to=2026-06-01"
 
-# Members
+# Members  (use an exact full name from /members for the second call)
 curl "http://localhost:8080/api/v1/members"
-curl "http://localhost:8080/api/v1/members/Jane%20Representative/trades"
+curl "http://localhost:8080/api/v1/members/Rohit%20Khanna/trades"
 
 # Signals (clusters / outliers / late disclosures / concentration)
 curl "http://localhost:8080/api/v1/signals"
@@ -108,28 +119,10 @@ curl -X POST "http://localhost:8080/api/v1/signals/detect"   # re-run detection
 
 # Daily digest — LLM narrative + structured signals + disclaimer (cached per day)
 curl "http://localhost:8080/api/v1/digest/daily"
+curl "http://localhost:8080/api/v1/digest/daily?refresh=true"  # bypass cache, force a fresh LLM call
 ```
 
 ## Architecture
-
-```
-            ┌──────────────┐         ┌──────────────────────────────┐
-  cron ───► │  Scheduler   │         │           REST API           │
-            └──────┬───────┘         │ Trade / Member / Signal /    │
-                   │                 │ Digest / Admin resources     │
-                   ▼                 └───────────────┬──────────────┘
-        ┌───────────────────────────────────────────▼──────────────┐
-        │                       Service layer                       │
-        │  Ingestion · SignalDetection (pure) · Performance · LLM   │
-        └───┬───────────────┬──────────────────┬──────────────┬─────┘
-            │               │                  │              │ (cache)
-            ▼               ▼                  ▼              ▼
-   ┌────────────────┐  ┌──────────┐    ┌──────────────┐  ┌──────────┐
-   │ Finnhub  (FT)  │  │ Postgres │    │ Anthropic FT │  │  digest  │
-   │ trades+quotes  │  │ (Flyway) │    │   Claude     │  │  cache   │
-   └────────────────┘  └──────────┘    └──────────────┘  └──────────┘
-   FT = fault-tolerance ring (@Retry + @Timeout + @CircuitBreaker)
-```
 
 ### Diagrams
 
@@ -163,28 +156,67 @@ curl "http://localhost:8080/api/v1/digest/daily"
 
 ## How it works
 
-1. **Ingestion** (`TradeIngestionService`) polls Finnhub per watchlist ticker,
-   upserts members, and persists trades idempotently using a deterministic
-   `sourceFilingId` (Finnhub exposes no stable id).
-2. **Signal detection** (`SignalDetectionService`, pure code) finds:
+1. **Ingestion** is pluggable (`ingestion.source`). The default
+   `CongressDataIngestionService` fetches each watchlist ticker's real filings
+   from the free congress.kadoa.com dataset; `TradeIngestionService` does the same
+   from Finnhub. Both normalise records and persist them idempotently through the
+   shared `TradeUpsertService`, keyed on a stable `sourceFilingId`.
+2. **Signal detection** (`SignalDetectionService`, pure code — no DB, no LLM) finds:
    `CLUSTER`, `OUTLIER`, `LATE_DISCLOSURE`, `SECTOR_CONCENTRATION`.
 3. **Digest** (`DigestService` + `LlmInsightService`) builds a structured prompt
-   from the computed trades/signals and asks Claude to write a neutral briefing.
-   The result is cached per day so repeated calls don't re-bill the API.
+   from the computed trades/signals and asks the configured `LlmProvider` (Gemini
+   by default, Anthropic optional) to write a neutral briefing. The result is
+   cached per day so repeated calls don't re-bill the LLM (use `?refresh=true` to
+   force a fresh call).
+
+## Configuration knobs
+
+| Property / env | Default | Effect |
+|---|---|---|
+| `INGESTION_SOURCE` / `ingestion.source` | `congress` | Trade source: `congress` (free) or `finnhub` |
+| `LLM_PROVIDER` / `watcher.llm.provider` | `gemini` | Digest narrator: `gemini` (free) or `anthropic` |
+| `watcher.gemini.model` | `gemini-flash-latest` | Gemini model |
+| `watcher.gemini.thinking-budget` | `0` | `0` disables 2.5-series "thinking" (avoids truncated output) |
+| `watcher.signals.*` | see properties | Thresholds for each signal rule |
+| `ingestion.cron` | every 30 min (`off` in dev/test) | Scheduler cadence |
+
+## Observability / logging
+
+The call sequence is logged at INFO so you can follow it in the console — these
+lines mirror the [digest sequence diagram](docs/sequence-digest.png):
+
+```
+API REQUEST  → GET /api/v1/digest/daily?refresh=true
+DIGEST build start … step 1/3 (47 trades) … step 2/3 (22 signals)
+LLM REQUEST  → gemini POST …generateContent (systemChars=918, userChars=8154, maxTokens=2048, thinkingBudget=0)
+LLM RESPONSE ← gemini (8905ms, finishReason=STOP, chars=4949, tokens 4150/1929/null)
+API RESPONSE ← GET /api/v1/digest/daily?refresh=true : 200 (8984ms)
+```
+
+In `%dev` the app package logs at DEBUG, which also prints the **full LLM prompts
+and response bodies**. API keys are **never** logged (logging is app-level, not
+Quarkus's REST-client logging, which would dump the auth headers / `?token=`).
 
 ## Testing
 
 ```bash
-./mvnw verify
+./mvnw verify   # 22 tests
 ```
 
 - `SignalDetectionServiceTest` — pure unit tests, one per rule.
-- `TradeResourceTest` — `@QuarkusTest` + REST Assured over Testcontainers Postgres.
-- `LlmInsightServiceTest` — WireMock stands in for Anthropic; the real API is
-  **never** called.
+- `TradeResourceTest` — `@QuarkusTest` + REST Assured over Testcontainers Postgres,
+  exercising the full ingest → signals → digest path (both data sources).
+- `LlmInsightServiceTest` — WireMock stands in for Gemini (default) and Anthropic;
+  the real APIs are **never** called.
 
-All external HTTP is mocked via WireMock; Postgres is provided by Quarkus Dev
-Services (Testcontainers). **No real Finnhub or Anthropic calls happen in tests.**
+All external HTTP (congress.kadoa.com, Finnhub, Gemini, Anthropic) is mocked via
+WireMock; Postgres is provided by Quarkus Dev Services (Testcontainers). **No real
+external calls happen in tests.**
+
+> The Quarkus 3.15 BOM pins Testcontainers 1.20.1, which can't negotiate with very
+> recent Docker engines; this project overrides it to **1.21.4** in `pom.xml`. If
+> Testcontainers can't find your Docker socket, set
+> `DOCKER_HOST=unix://$HOME/.docker/run/docker.sock`.
 
 ## Database UI (optional)
 
