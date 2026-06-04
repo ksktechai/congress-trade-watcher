@@ -120,7 +120,17 @@ curl -X POST "http://localhost:8080/api/v1/signals/detect"   # re-run detection
 # Daily digest — LLM narrative + structured signals + disclaimer (cached per day)
 curl "http://localhost:8080/api/v1/digest/daily"
 curl "http://localhost:8080/api/v1/digest/daily?refresh=true"  # bypass cache, force a fresh LLM call
+
+# Reactive (Mutiny) demo endpoints
+curl "http://localhost:8080/api/v1/reactive/trades?ticker=AAPL"          # Uni<List<TradeDto>>
+curl -N -H "Accept: text/event-stream" \
+     "http://localhost:8080/api/v1/reactive/tickers"                     # Multi<String> as SSE
 ```
+
+> **Blocking vs reactive:** the app is intentionally **blocking** (Hibernate ORM
+> Panache over JDBC). `ReactiveDemoResource` shows the Mutiny `Uni`/`Multi` style
+> for the read path, offloading the blocking JDBC work to the worker pool with
+> `runSubscriptionOn(...)` so the event loop is never blocked.
 
 ## Architecture
 
