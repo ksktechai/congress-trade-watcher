@@ -1,85 +1,85 @@
 @startuml congress-trade-watcher
 title Congress Trade Watcher — Architecture\n(research tool, NOT financial advice)
 
-skinparam componentStyle rectangle
+skinparam backgroundColor #FCFCFD
 skinparam shadowing false
+skinparam roundcorner 10
+skinparam componentStyle rectangle
 skinparam defaultTextAlignment center
+skinparam ArrowColor #607D8B
+skinparam ArrowFontColor #455A64
+skinparam rectangleBorderColor #B0BEC5
+skinparam packageBackgroundColor #F4F6F8
+skinparam packageBorderColor #B0BEC5
+skinparam noteBackgroundColor #FFFDE7
+skinparam noteBorderColor #E0C46C
 
-actor "Operator / cURL" as user
+actor "Operator /\ncURL" as user
 
-cloud "Congress Trading Monitor\ncongress.kadoa.com\n(FREE, no key — DEFAULT)" as congress
-cloud "Finnhub API\n(premium, optional)" as finnhub
-cloud "Google Gemini API\n(FREE — default narrator)" as gemini
-cloud "Anthropic Claude API\n(optional narrator)" as anthropic
-database "PostgreSQL 16\n(Flyway-managed)" as pg
+cloud "**Congress Trading Monitor**\ncongress.kadoa.com\nFREE · no key · DEFAULT" as congress #D5E8D4
+cloud "Finnhub API\npremium · optional" as finnhub #DAE8FC
+cloud "**Google Gemini**\nFREE · default narrator" as gemini #D5E8D4
+cloud "Anthropic Claude\noptional narrator" as anthropic #DAE8FC
+database "PostgreSQL 16\nFlyway-managed" as pg #D5E8D4
 
-rectangle "congress-trade-watcher (Quarkus)" {
+rectangle "congress-trade-watcher  (Quarkus)" {
 
-  component "IngestionScheduler\n@Scheduled (cron)\nOFF in dev/test" as scheduler
+  component "IngestionScheduler\ncron · OFF in dev/test" as scheduler #FFF2CC
 
-  package "REST API (JAX-RS)\n+ ApiAccessLoggingFilter (req/resp logs)" {
-    component "Trade / Member /\nSignal / Digest / Admin\nresources" as api
+  package "REST API (JAX-RS)  +  Access-log filter" {
+    component "Trade · Member · Signal\nDigest · Admin resources" as api #DAE8FC
   }
 
-  package "Ingestion sources (pluggable: ingestion.source)" {
-    component "CongressDataIngestionService\n(default)" as congressIngest
-    component "TradeIngestionService\n(Finnhub)" as finnhubIngest
+  package "Ingestion sources  (ingestion.source)" {
+    component "CongressDataIngestionService\ndefault" as cong #D5E8D4
+    component "TradeIngestionService\nFinnhub" as finn #DAE8FC
   }
 
-  component "TradeUpsertService\n(idempotent upsert,\nsourceFilingId)" as upsert
+  component "TradeUpsertService\nidempotent upsert · sourceFilingId" as upsert #FFE6CC
 
   package "Analysis & digest" {
-    component "SignalDetectionService\n**PURE CODE** — no LLM" as detect
-    component "LlmInsightService\n+ LlmProvider (pluggable)\nnarration only" as llm
-    component "PerformanceTrackingService" as perf
+    component "SignalDetectionService\nPURE CODE — no LLM" as detect #D5E8D4
+    component "DigestService\ncache per day" as digest #E1D5E7
+    component "LlmInsightService\n+ LlmProvider (pluggable)" as llm #FFE6CC
   }
 
-  package "Repositories (Panache)" {
-    component "Trade / Member /\nSignal / Watchlist" as repos
-  }
-
-  component "Digest cache\n(@CacheResult, per day)" as cache
+  component "Repositories (Panache)\nTrade · Member · Signal · Watchlist" as repos #F8CECC
 }
 
-note right of congressIngest
-  Clients carry the fault-tolerance ring:
-  @Retry + @Timeout + @CircuitBreaker
-end note
-
 user --> api
-scheduler --> congressIngest
-api --> congressIngest
-api --> finnhubIngest
+scheduler --> cong
+api --> cong
+api --> finn
+api --> detect
+api --> digest
 
-congressIngest --> congress
-finnhubIngest --> finnhub
-congressIngest --> upsert
-finnhubIngest --> upsert
+cong --> congress
+finn --> finnhub
+cong --> upsert
+finn --> upsert
 upsert --> repos
 
-api --> repos
-api --> detect
-detect --> repos
-
-api --> cache
-cache --> llm
+digest --> detect
+digest --> llm
 llm --> gemini
-llm --> anthropic
-perf --> finnhub
+llm ..> anthropic : optional
 
+detect --> repos
 repos --> pg
 
 note bottom of detect
-  CLUSTER · OUTLIER ·
-  LATE_DISCLOSURE ·
-  SECTOR_CONCENTRATION
-  (deterministic, unit-tested)
+  CLUSTER · OUTLIER · LATE_DISCLOSURE · SECTOR_CONCENTRATION
+  deterministic & unit-tested
 end note
 
 note right of llm
-  Summarises/contextualises
-  computed data only.
+  Narrates computed data only.
   No buy/sell, no predictions.
-  Provider via watcher.llm.provider.
+end note
+
+note right of cong
+  External clients carry the
+  fault-tolerance ring:
+  @Retry + @Timeout + @CircuitBreaker
 end note
 @enduml

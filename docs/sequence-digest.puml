@@ -1,0 +1,76 @@
+@startuml digest-sequence
+title Daily Digest — call sequence\nGET /api/v1/digest/daily  (research output, NOT financial advice)
+
+skinparam backgroundColor #FCFCFD
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #455A64
+skinparam ArrowFontColor #37474F
+skinparam sequenceLifeLineBorderColor #CFD8DC
+skinparam sequenceLifeLineBackgroundColor #F4F6F8
+skinparam noteBackgroundColor #FFF8E1
+skinparam noteBorderColor #E0C46C
+skinparam participant {
+  BorderColor #546E7A
+  FontColor #FFFFFF
+  FontStyle bold
+}
+
+actor "Client / cURL" as C #607D8B
+participant "DigestResource\n+ Access-log filter" as API #4C78A8
+participant "DigestService\n@CacheResult (per day)" as DS #8E6FB0
+database "PostgreSQL\n(via Panache repos)" as DB #43A047
+participant "SignalService +\nSignalDetection (PURE)" as SG #5AA469
+participant "LlmInsightService +\nGeminiLlmProvider" as LM #E0922F
+participant "Gemini API\n(free)" as GEM #6C8EBF
+
+C -> API: GET /digest/daily?refresh=true
+activate API
+note right of API #ECEFF1: log: API REQUEST →
+
+opt refresh=true
+  API -> DS: clearCache()
+  note right of DS #ECEFF1: log: DIGEST cache cleared
+end
+
+API -> DS: dailyDigest(today)
+activate DS
+
+alt cache HIT (already built today)
+  DS -->> API: cached DigestResponse
+  note over DS: no LLM call — 0 ms
+else cache MISS
+  note right of DS #ECEFF1: log: DIGEST step 1/3
+  DS -> DB: load trades disclosed in last 45 days
+  DB -->> DS: trades
+
+  note right of DS #ECEFF1: log: DIGEST step 2/3
+  DS -> SG: detectAndPersist()
+  SG -> DB: read trades, replace signals
+  SG -->> DS: signals (CLUSTER/OUTLIER/\nLATE_DISCLOSURE/CONCENTRATION)
+
+  DS -> LM: generateNarrative(trades, signals)
+  activate LM
+  LM -> LM: build prompt\n(system rules + computed data)
+  note right of LM #ECEFF1: log: LLM REQUEST →
+  LM -> GEM: POST generateContent\n(systemInstruction + contents, thinkingBudget=0)
+  GEM -->> LM: candidates[].text (+ token usage)
+  note right of LM #ECEFF1: log: LLM RESPONSE ←
+  LM -->> DS: narrative text
+  deactivate LM
+
+  DS -> DS: cache DigestResponse for today
+  note right of DS #ECEFF1: log: DIGEST step 3/3
+end
+
+DS -->> API: DigestResponse\n(narrative + signals + disclaimer)
+deactivate DS
+note right of API #ECEFF1: log: API RESPONSE ← 200
+API -->> C: 200 application/json
+deactivate API
+
+note across #FFFDE7
+  The LLM only narrates data the app already computed.
+  No buy/sell recommendations, no price predictions.
+end note
+@enduml

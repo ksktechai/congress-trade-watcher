@@ -131,8 +131,26 @@ curl "http://localhost:8080/api/v1/digest/daily"
    FT = fault-tolerance ring (@Retry + @Timeout + @CircuitBreaker)
 ```
 
-Diagrams: [`docs/architecture.puml`](docs/architecture.puml) (PlantUML) and
-[`docs/architecture.drawio`](docs/architecture.drawio) (draw.io).
+### Diagrams
+
+| Diagram | Source | Rendered |
+|---|---|---|
+| Component / architecture | [`architecture.puml`](docs/architecture.puml) · [`architecture.drawio`](docs/architecture.drawio) | [`architecture.png`](docs/architecture.png) |
+| Daily digest — call sequence | [`sequence-digest.puml`](docs/sequence-digest.puml) | [`sequence-digest.png`](docs/sequence-digest.png) |
+| Ingestion — call sequence | [`sequence-ingestion.puml`](docs/sequence-ingestion.puml) | [`sequence-ingestion.png`](docs/sequence-ingestion.png) |
+
+![Architecture](docs/architecture.png)
+
+**Daily digest call sequence** (mirrors the `API/DIGEST/LLM REQUEST/RESPONSE` log lines):
+
+![Digest sequence](docs/sequence-digest.png)
+
+**Ingestion call sequence:**
+
+![Ingestion sequence](docs/sequence-ingestion.png)
+
+> PNGs are rendered from the `.puml` sources with PlantUML
+> (`java -jar plantuml.jar docs/*.puml`); regenerate them if you change a `.puml`.
 
 ### Layering
 

@@ -1,0 +1,64 @@
+@startuml ingestion-sequence
+title Ingestion — call sequence\nPOST /api/v1/admin/ingest  (source = congress, the free default)
+
+skinparam backgroundColor #FCFCFD
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #455A64
+skinparam ArrowFontColor #37474F
+skinparam sequenceLifeLineBorderColor #CFD8DC
+skinparam sequenceLifeLineBackgroundColor #F4F6F8
+skinparam noteBackgroundColor #FFF8E1
+skinparam noteBorderColor #E0C46C
+skinparam participant {
+  BorderColor #546E7A
+  FontColor #FFFFFF
+  FontStyle bold
+}
+
+actor "Client / Scheduler" as C #607D8B
+participant "AdminResource\n+ Access-log filter" as API #4C78A8
+participant "CongressDataIngestion\nService" as ING #5AA469
+participant "TradeUpsertService\n(idempotent)" as UP #E0922F
+database "PostgreSQL\n(via Panache repos)" as DB #43A047
+participant "congress.kadoa.com\n(free, no key)" as SRC #6C8EBF
+
+C -> API: POST /admin/ingest  (?source=congress)
+activate API
+note right of API #ECEFF1: log: API REQUEST →
+
+API -> ING: ingestWatchlist()
+activate ING
+ING -> DB: read active watchlist tickers
+DB -->> ING: [AAPL, MSFT, NVDA, ... LMT]
+
+loop for each watchlist ticker
+  note right of ING #ECEFF1: log: INGEST REQUEST →
+  ING -> SRC: GET /data/ticker/{TICKER}.json
+  SRC -->> ING: real STOCK Act filings
+  note right of ING #ECEFF1: log: INGEST RESPONSE ← N trades
+
+  group one transaction per ticker
+    loop for each filing
+      ING -> UP: upsert(NormalizedTrade)
+      activate UP
+      UP -> UP: truncate fields to column widths
+      UP -> DB: find member by name (upsert)
+      UP -> DB: find trade by sourceFilingId\n→ insert or update
+      deactivate UP
+    end
+  end
+end
+
+ING -->> API: IngestionResult\n(tickers, fetched, new, updated, errors)
+deactivate ING
+note right of API #ECEFF1: log: API RESPONSE ← 200
+API -->> C: 200 application/json
+deactivate API
+
+note across #FFFDE7
+  Each external call carries the fault-tolerance ring:
+  @Retry + @Timeout + @CircuitBreaker.
+  Idempotent: re-running updates rows by sourceFilingId, never duplicates.
+end note
+@enduml
