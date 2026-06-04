@@ -1,0 +1,257 @@
+{
+  "info": {
+    "_postman_id": "208293fb-64b1-4daa-a4d5-eed40ec89e1c",
+    "name": "congress-trade-watcher",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "4991288"
+  },
+  "item": [
+    {
+      "name": "get-all-trades",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/trades",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-all-trades-by",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/trades?member=Donald J Trump&type=PURCHASE",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ],
+          "query": [
+            {
+              "key": "member",
+              "value": "Donald J Trump"
+            },
+            {
+              "key": "type",
+              "value": "PURCHASE"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "daily-digest",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/digest/daily?refresh=true",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "digest",
+            "daily"
+          ],
+          "query": [
+            {
+              "key": "refresh",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ingest-data",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/admin/ingest",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "ingest"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-all-congress-members",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/members",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "members"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-congress-member-trades",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/members/Donald J Trump/trades",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "members",
+            "Donald J Trump",
+            "trades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-signals",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/signals",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "signals"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get-signals-by",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/signals?ticker=GOOGL&type=OUTLIER",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "signals"
+          ],
+          "query": [
+            {
+              "key": "ticker",
+              "value": "GOOGL"
+            },
+            {
+              "key": "type",
+              "value": "OUTLIER"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "re-run-signals-detect",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/signals/detect",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "signals",
+            "detect"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "trade-by-ticker",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/trades?ticker=AAPL",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "trades"
+          ],
+          "query": [
+            {
+              "key": "ticker",
+              "value": "AAPL"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
