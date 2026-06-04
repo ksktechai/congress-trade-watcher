@@ -1,15 +1,12 @@
 package nz.co.ksktech.congresstrades.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import nz.co.ksktech.congresstrades.api.exception.LlmUnavailableException;
-import nz.co.ksktech.congresstrades.client.AnthropicClient;
-import nz.co.ksktech.congresstrades.client.dto.AnthropicMessageRequest;
-import nz.co.ksktech.congresstrades.client.dto.AnthropicMessageResponse;
 import nz.co.ksktech.congresstrades.config.AppConfig;
 import nz.co.ksktech.congresstrades.domain.Signal;
 import nz.co.ksktech.congresstrades.domain.Trade;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 
 import java.time.LocalDate;
@@ -53,8 +50,7 @@ public class LlmInsightService {
             """;
 
     @Inject
-    @RestClient
-    AnthropicClient anthropicClient;
+    Instance<LlmProvider> providers;
 
     @Inject
     AppConfig appConfig;
@@ -106,32 +102,42 @@ public class LlmInsightService {
     }
 
     /**
-     * Calls Anthropic to produce the narrative. Throws {@link LlmUnavailableException}
-     * on any failure (missing key, timeout, open circuit) so callers can degrade.
+     * Calls the configured provider ({@code watcher.llm.provider}) to produce the
+     * narrative. Throws {@link LlmUnavailableException} on any failure (missing key,
+     * timeout, open circuit, unknown provider) so callers can degrade.
      */
     public String generateNarrative(LocalDate date, List<Trade> trades, List<Signal> signals) {
-        if (appConfig.anthropic().apiKey().filter(k -> !k.isBlank()).isEmpty()) {
-            throw new LlmUnavailableException(
-                    "ANTHROPIC_API_KEY is not configured; cannot generate the digest narrative.");
+        String providerId = appConfig.llm().provider();
+        LlmProvider provider = resolveProvider(providerId);
+        if (!provider.isConfigured()) {
+            throw new LlmUnavailableException(String.format(
+                    "LLM provider '%s' is not configured; set its API key "
+                            + "(GEMINI_API_KEY or ANTHROPIC_API_KEY) to generate the digest.", providerId));
         }
         String userPrompt = buildUserPrompt(date, trades, signals);
-        AnthropicMessageRequest request = new AnthropicMessageRequest(
-                appConfig.anthropic().model(),
-                appConfig.anthropic().maxTokens(),
-                SYSTEM_PROMPT,
-                List.of(AnthropicMessageRequest.Message.user(userPrompt)));
         try {
-            AnthropicMessageResponse response = anthropicClient.createMessage(request);
-            String text = response.firstText();
+            String text = provider.generate(SYSTEM_PROMPT, userPrompt);
             if (text == null || text.isBlank()) {
-                throw new LlmUnavailableException("Anthropic returned an empty response.");
+                throw new LlmUnavailableException(
+                        "LLM provider '" + providerId + "' returned an empty response.");
             }
             return text;
         } catch (LlmUnavailableException e) {
             throw e;
         } catch (Exception e) {
-            LOG.warnf(e, "Anthropic call failed");
-            throw new LlmUnavailableException("Failed to generate digest via Anthropic: " + e.getMessage(), e);
+            LOG.warnf(e, "LLM provider '%s' call failed", providerId);
+            throw new LlmUnavailableException(
+                    "Failed to generate digest via " + providerId + ": " + e.getMessage(), e);
         }
+    }
+
+    private LlmProvider resolveProvider(String providerId) {
+        for (LlmProvider provider : providers) {
+            if (provider.id().equalsIgnoreCase(providerId)) {
+                return provider;
+            }
+        }
+        throw new LlmUnavailableException(
+                "Unknown LLM provider '" + providerId + "'. Supported: gemini, anthropic.");
     }
 }

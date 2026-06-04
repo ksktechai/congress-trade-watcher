@@ -48,11 +48,22 @@ Key URLs: Swagger UI `/q/swagger-ui`, OpenAPI `/q/openapi`, Health `/q/health`.
 
 ## Secrets
 
-API keys are **environment variables only**: `FINNHUB_API_KEY`,
-`ANTHROPIC_API_KEY`. They are referenced in `application.properties` as
-`${FINNHUB_API_KEY}` / `${ANTHROPIC_API_KEY}` (surfaced through the `watcher.*`
-`@ConfigMapping`, `AppConfig`). **Never** hard-code a key or put one in a
-properties file or commit `.env`.
+API keys are **environment variables only**: `FINNHUB_API_KEY`, plus the LLM key
+for the active provider (`GEMINI_API_KEY` by default, or `ANTHROPIC_API_KEY`).
+They are referenced in `application.properties` as `${FINNHUB_API_KEY}` etc.
+(surfaced through the `watcher.*` `@ConfigMapping`, `AppConfig`). All keys are
+modelled as `Optional<String>` so the app boots even when unset — a key is only
+needed when that remote call is actually made. **Never** hard-code a key or put
+one in a properties file or commit `.env`.
+
+## LLM provider (narration only)
+
+The digest narrator is pluggable via `watcher.llm.provider` (`LLM_PROVIDER` env),
+default `gemini`. To add/choose a provider: implement `LlmProvider`
+(`@ApplicationScoped`, with an `id()`), back it with a `@RegisterRestClient`
+client; `LlmInsightService` selects the bean whose `id()` matches the config.
+`GeminiLlmProvider` and `AnthropicLlmProvider` are the two examples. Whatever the
+provider, the no-recommendations system prompt and disclaimer rules still apply.
 
 ## Architecture & layering (respect these boundaries)
 

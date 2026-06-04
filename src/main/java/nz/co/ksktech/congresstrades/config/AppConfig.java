@@ -15,7 +15,11 @@ public interface AppConfig {
 
     Finnhub finnhub();
 
+    Llm llm();
+
     Anthropic anthropic();
+
+    Gemini gemini();
 
     Signals signals();
 
@@ -24,11 +28,28 @@ public interface AppConfig {
         Optional<String> apiKey();
     }
 
+    interface Llm {
+        /** Which narration provider to use: {@code gemini} or {@code anthropic}. */
+        @WithDefault("gemini")
+        String provider();
+    }
+
     interface Anthropic {
         /** Empty when {@code ANTHROPIC_API_KEY} is unset; the app still boots. */
         Optional<String> apiKey();
 
         @WithDefault("claude-sonnet-4-5")
+        String model();
+
+        @WithDefault("1500")
+        int maxTokens();
+    }
+
+    interface Gemini {
+        /** Empty when {@code GEMINI_API_KEY} is unset; the app still boots. */
+        Optional<String> apiKey();
+
+        @WithDefault("gemini-flash-latest")
         String model();
 
         @WithDefault("1500")

@@ -9,6 +9,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
 /**
@@ -32,11 +33,13 @@ public class WireMockTestResource implements QuarkusTestResourceLifecycleManager
         wireMockServer.start();
         stubFinnhub();
         stubAnthropic();
+        stubGemini();
 
         String baseUrl = wireMockServer.baseUrl();
         return Map.of(
                 "quarkus.rest-client.finnhub-api.url", baseUrl,
-                "quarkus.rest-client.anthropic-api.url", baseUrl);
+                "quarkus.rest-client.anthropic-api.url", baseUrl,
+                "quarkus.rest-client.gemini-api.url", baseUrl);
     }
 
     private void stubFinnhub() {
@@ -103,6 +106,29 @@ public class WireMockTestResource implements QuarkusTestResourceLifecycleManager
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
                         .withBody(messageBody)));
+    }
+
+    private void stubGemini() {
+        String generateBody = """
+                {
+                  "candidates": [
+                    {
+                      "content": {
+                        "role": "model",
+                        "parts": [
+                          {"text": "MOCK GEMINI DIGEST: Two disclosures were observed. Remember these are delayed up to 45 days and amounts are ranges. This is not financial advice."}
+                        ]
+                      },
+                      "finishReason": "STOP"
+                    }
+                  ],
+                  "usageMetadata": {"promptTokenCount": 120, "candidatesTokenCount": 60, "totalTokenCount": 180}
+                }
+                """;
+        wireMockServer.stubFor(post(urlPathMatching("/v1beta/models/.*:generateContent"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(generateBody)));
     }
 
     @Override

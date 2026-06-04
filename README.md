@@ -50,16 +50,21 @@ The API is then at <http://localhost:8080>, with:
 - **OpenAPI**: <http://localhost:8080/q/openapi>
 - **Health**: <http://localhost:8080/q/health> (readiness includes a DB check)
 
-### Setting the two required environment variables
+### Setting the environment variables
 
-| Variable            | Where to get it                               | Used for                          |
-|---------------------|-----------------------------------------------|-----------------------------------|
-| `FINNHUB_API_KEY`   | https://finnhub.io → Dashboard → API Keys     | Congressional trades + quotes     |
-| `ANTHROPIC_API_KEY` | https://console.anthropic.com → API Keys      | Digest narration (Claude)         |
+| Variable            | Where to get it                            | Used for                                  |
+|---------------------|--------------------------------------------|-------------------------------------------|
+| `FINNHUB_API_KEY`   | https://finnhub.io → Dashboard → API Keys  | Congressional trades + quotes             |
+| `GEMINI_API_KEY`    | https://aistudio.google.com/apikey         | Digest narration (default provider, free) |
+| `ANTHROPIC_API_KEY` | https://console.anthropic.com → API Keys   | Digest narration (if `LLM_PROVIDER=anthropic`) |
 
-They are referenced in `application.properties` as `${FINNHUB_API_KEY}` /
-`${ANTHROPIC_API_KEY}` and read from the environment. **No secret is ever stored
-in a properties file.**
+The digest's narration provider is selectable via `LLM_PROVIDER` (`gemini` —
+default, free tier — or `anthropic`); set the key for whichever you choose. All
+are referenced in `application.properties` as `${FINNHUB_API_KEY}` etc. and read
+from the environment. **No secret is ever stored in a properties file.**
+
+> **Finnhub note:** the congressional-trading endpoint may require a paid Finnhub
+> plan; a free-tier key can return HTTP 403 for it (the `/quote` endpoint is free).
 
 ## Trigger ingestion manually (dev)
 
