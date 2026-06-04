@@ -1,6 +1,6 @@
 package nz.co.ksktech.congresstrades.api.dto;
 
-import nz.co.ksktech.congresstrades.service.TradeIngestionService.IngestionResult;
+import nz.co.ksktech.congresstrades.service.IngestionResult;
 
 import java.util.List;
 

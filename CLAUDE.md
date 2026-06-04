@@ -56,6 +56,21 @@ modelled as `Optional<String>` so the app boots even when unset — a key is onl
 needed when that remote call is actually made. **Never** hard-code a key or put
 one in a properties file or commit `.env`.
 
+## Ingestion sources (pluggable)
+
+Trade data has two sources, chosen by `ingestion.source` (`INGESTION_SOURCE` env)
+and the `?source=` admin param:
+- **`congress`** (default, free, no key) — `CongressDataIngestionService` +
+  `CongressDataClient`, pulling the Congress Trading Monitor open dataset
+  (congress.kadoa.com, MIT). Real STOCK Act filings with a stable `id` per filing.
+- **`finnhub`** (premium key) — `TradeIngestionService` + `FinnhubClient`.
+
+Both normalise raw records to `TradeUpsertService.NormalizedTrade` and call the
+single idempotent `TradeUpsertService.upsert` (keyed on `sourceFilingId`), which
+also defensively truncates strings to column widths — real PDF-parsed data can be
+very long/noisy. To add a source: new client + DTOs + an ingestion service that
+builds `NormalizedTrade`s; wire it into `AdminResource` and `IngestionScheduler`.
+
 ## LLM provider (narration only)
 
 The digest narrator is pluggable via `watcher.llm.provider` (`LLM_PROVIDER` env),

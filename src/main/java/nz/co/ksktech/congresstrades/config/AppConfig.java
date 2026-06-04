@@ -52,8 +52,13 @@ public interface AppConfig {
         @WithDefault("gemini-flash-latest")
         String model();
 
-        @WithDefault("1500")
+        @WithDefault("2048")
         int maxTokens();
+
+        /** Tokens the 2.5-series model may spend "thinking"; 0 disables it
+         *  (recommended for narration), negative omits the field. */
+        @WithDefault("0")
+        int thinkingBudget();
     }
 
     interface Signals {

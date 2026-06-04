@@ -31,15 +31,54 @@ public class WireMockTestResource implements QuarkusTestResourceLifecycleManager
     public Map<String, String> start() {
         wireMockServer = new WireMockServer(options().dynamicPort());
         wireMockServer.start();
+        stubCongressData();
         stubFinnhub();
         stubAnthropic();
         stubGemini();
 
         String baseUrl = wireMockServer.baseUrl();
         return Map.of(
+                "quarkus.rest-client.congress-data.url", baseUrl,
                 "quarkus.rest-client.finnhub-api.url", baseUrl,
                 "quarkus.rest-client.anthropic-api.url", baseUrl,
                 "quarkus.rest-client.gemini-api.url", baseUrl);
+    }
+
+    private void stubCongressData() {
+        // Real-shaped Congress Trading Monitor records, returned for any ticker.
+        // The second filing is 42 days late so a LATE_DISCLOSURE signal is produced.
+        String body = """
+                {
+                  "ticker": "AAPL",
+                  "trades": [
+                    {
+                      "id": "house_test_1",
+                      "filer_name": "Jane Representative",
+                      "chamber": "house", "party": "D", "state": "CA",
+                      "ticker": "AAPL", "asset_name": "Apple Inc. - Common Stock",
+                      "transaction_type": "Purchase",
+                      "amount_range_low": 1001, "amount_range_high": 15000,
+                      "transaction_date": "2026-05-01", "filing_date": "2026-05-10",
+                      "is_late": 0
+                    },
+                    {
+                      "id": "senate_test_1",
+                      "filer_name": "John Senator",
+                      "chamber": "senate", "party": "R", "state": "TX",
+                      "ticker": "AAPL", "asset_name": "Apple Inc. - Common Stock",
+                      "transaction_type": "Sale (Full)",
+                      "amount_range_low": 250001, "amount_range_high": 500000,
+                      "transaction_date": "2026-04-01", "filing_date": "2026-05-13",
+                      "is_late": 1
+                    }
+                  ],
+                  "price": {}
+                }
+                """;
+        wireMockServer.stubFor(get(urlPathMatching("/data/ticker/.*\\.json"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(body)));
     }
 
     private void stubFinnhub() {

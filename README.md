@@ -52,19 +52,24 @@ The API is then at <http://localhost:8080>, with:
 
 ### Setting the environment variables
 
-| Variable            | Where to get it                            | Used for                                  |
-|---------------------|--------------------------------------------|-------------------------------------------|
-| `FINNHUB_API_KEY`   | https://finnhub.io → Dashboard → API Keys  | Congressional trades + quotes             |
-| `GEMINI_API_KEY`    | https://aistudio.google.com/apikey         | Digest narration (default provider, free) |
-| `ANTHROPIC_API_KEY` | https://console.anthropic.com → API Keys   | Digest narration (if `LLM_PROVIDER=anthropic`) |
+Only **one** key is required for a full run — a Gemini key for the digest. The
+default trade-data source needs **no key**.
 
-The digest's narration provider is selectable via `LLM_PROVIDER` (`gemini` —
-default, free tier — or `anthropic`); set the key for whichever you choose. All
-are referenced in `application.properties` as `${FINNHUB_API_KEY}` etc. and read
-from the environment. **No secret is ever stored in a properties file.**
+| Variable            | Required? | Where to get it                          | Used for                                       |
+|---------------------|-----------|------------------------------------------|------------------------------------------------|
+| `GEMINI_API_KEY`    | yes (for digest) | https://aistudio.google.com/apikey | Digest narration (default provider, free tier) |
+| `ANTHROPIC_API_KEY` | optional  | https://console.anthropic.com → API Keys | Digest narration if `LLM_PROVIDER=anthropic`   |
+| `FINNHUB_API_KEY`   | optional  | https://finnhub.io → Dashboard → API Keys | Only if you ingest with `?source=finnhub` (premium endpoint) |
 
-> **Finnhub note:** the congressional-trading endpoint may require a paid Finnhub
-> plan; a free-tier key can return HTTP 403 for it (the `/quote` endpoint is free).
+The narration provider is selectable via `LLM_PROVIDER` (`gemini` — default, free
+— or `anthropic`). The trade-data source is selectable via `INGESTION_SOURCE`
+(`congress` — default, free, no key — or `finnhub`). All keys are referenced in
+`application.properties` as `${...}` and read from the environment. **No secret is
+ever stored in a properties file.**
+
+> **Finnhub note:** Finnhub's congressional-trading endpoint requires a paid plan
+> (a free key returns HTTP 403), which is why the free `congress` source is the
+> default.
 
 ## Trigger ingestion manually (dev)
 
@@ -72,11 +77,14 @@ The scheduler is **disabled in dev** so local runs never auto-hit the external
 APIs. Trigger ingestion yourself:
 
 ```bash
-# Ingest the whole seeded watchlist (AAPL, MSFT, NVDA, ... LMT)
+# Ingest the whole seeded watchlist from the free open dataset (default source)
 curl -X POST "http://localhost:8080/api/v1/admin/ingest"
 
 # Ingest a single symbol
 curl -X POST "http://localhost:8080/api/v1/admin/ingest?ticker=AAPL"
+
+# Use Finnhub instead (requires a paid FINNHUB_API_KEY)
+curl -X POST "http://localhost:8080/api/v1/admin/ingest?source=finnhub"
 ```
 
 In `%prod` the scheduler runs on `ingestion.cron` (default every 30 minutes).
@@ -168,8 +176,14 @@ docker compose --profile tools up -d   # pgAdmin at http://localhost:5050
 
 ## Data sources & honesty
 
-- Finnhub Congressional Trading: <https://finnhub.io/docs/api/congressional-trading>
-- Anthropic Messages API: <https://docs.anthropic.com/en/api/messages>
+- **Congress Trading Monitor** open dataset (default, free, no key):
+  <https://congress.kadoa.com> — real STOCK Act filings parsed from the official
+  House Clerk, Senate eFD, and OGE portals. Source repo (MIT):
+  <https://github.com/kadoa-org/congress-trading-monitor>. Static snapshots, so
+  the data is real but not continuously live. Thanks to the kadoa-org maintainers.
+- Finnhub Congressional Trading (optional, premium): <https://finnhub.io/docs/api/congressional-trading>
+- Google Gemini API (default narrator): <https://ai.google.dev/api/generate-content>
+- Anthropic Messages API (optional narrator): <https://docs.anthropic.com/en/api/messages>
 
 This project exists to **learn** and to **research disclosure patterns**, not to
 generate trading signals. Treat every output accordingly.

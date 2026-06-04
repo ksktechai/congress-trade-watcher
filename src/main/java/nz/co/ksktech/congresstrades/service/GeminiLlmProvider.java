@@ -35,7 +35,8 @@ public class GeminiLlmProvider implements LlmProvider {
     @Override
     public String generate(String systemPrompt, String userPrompt) {
         GeminiGenerateRequest request = GeminiGenerateRequest.of(
-                systemPrompt, userPrompt, appConfig.gemini().maxTokens());
+                systemPrompt, userPrompt,
+                appConfig.gemini().maxTokens(), appConfig.gemini().thinkingBudget());
         GeminiGenerateResponse response = geminiClient.generateContent(
                 appConfig.gemini().model(),
                 appConfig.gemini().apiKey().orElse(""),

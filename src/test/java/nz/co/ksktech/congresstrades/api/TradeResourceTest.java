@@ -31,6 +31,14 @@ class TradeResourceTest {
     }
 
     @Test
+    void ingest_viaFinnhubSourceAlsoWorks() {
+        given().queryParam("source", "finnhub")
+                .when().post("/api/v1/admin/ingest")
+                .then().statusCode(200)
+                .body("tradesFetched", greaterThan(0));
+    }
+
+    @Test
     void listTrades_returnsIngestedTrades() {
         given().when().get("/api/v1/trades")
                 .then().statusCode(200)
