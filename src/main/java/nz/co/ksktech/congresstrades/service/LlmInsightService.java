@@ -110,7 +110,7 @@ public class LlmInsightService {
      * on any failure (missing key, timeout, open circuit) so callers can degrade.
      */
     public String generateNarrative(LocalDate date, List<Trade> trades, List<Signal> signals) {
-        if (appConfig.anthropic().apiKey() == null || appConfig.anthropic().apiKey().isBlank()) {
+        if (appConfig.anthropic().apiKey().filter(k -> !k.isBlank()).isEmpty()) {
             throw new LlmUnavailableException(
                     "ANTHROPIC_API_KEY is not configured; cannot generate the digest narrative.");
         }

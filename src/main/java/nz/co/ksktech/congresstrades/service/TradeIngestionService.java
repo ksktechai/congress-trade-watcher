@@ -89,7 +89,7 @@ public class TradeIngestionService {
     }
 
     private void ingestTickerInNewTransaction(String ticker, IngestionResult result) {
-        String token = appConfig.finnhub().apiKey();
+        String token = appConfig.finnhub().apiKey().orElse("");
         CongressionalTradingResponse response = finnhubClient.getCongressionalTrades(ticker, token);
         List<CongressionalTrade> trades = response.data();
         result.tradesFetched += trades.size();

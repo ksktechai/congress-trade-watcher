@@ -3,6 +3,8 @@ package nz.co.ksktech.congresstrades.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
+import java.util.Optional;
+
 /**
  * Strongly-typed application configuration, bound from {@code application.properties}
  * (and overridable by environment variables). API keys are referenced here but
@@ -18,13 +20,13 @@ public interface AppConfig {
     Signals signals();
 
     interface Finnhub {
-        @WithDefault("")
-        String apiKey();
+        /** Empty when {@code FINNHUB_API_KEY} is unset; the app still boots. */
+        Optional<String> apiKey();
     }
 
     interface Anthropic {
-        @WithDefault("")
-        String apiKey();
+        /** Empty when {@code ANTHROPIC_API_KEY} is unset; the app still boots. */
+        Optional<String> apiKey();
 
         @WithDefault("claude-sonnet-4-5")
         String model();

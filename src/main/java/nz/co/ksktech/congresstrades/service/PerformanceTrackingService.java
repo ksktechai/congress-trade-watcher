@@ -38,7 +38,7 @@ public class PerformanceTrackingService {
      */
     public PriceSnapshot snapshot(String ticker) {
         try {
-            QuoteResponse quote = finnhubClient.getQuote(ticker.toUpperCase(), appConfig.finnhub().apiKey());
+            QuoteResponse quote = finnhubClient.getQuote(ticker.toUpperCase(), appConfig.finnhub().apiKey().orElse(""));
             if (quote == null || quote.current() == null) {
                 return null;
             }

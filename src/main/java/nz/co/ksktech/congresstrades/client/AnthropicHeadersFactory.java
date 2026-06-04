@@ -29,7 +29,7 @@ public class AnthropicHeadersFactory implements ClientHeadersFactory {
     public MultivaluedMap<String, String> update(MultivaluedMap<String, String> incomingHeaders,
                                                   MultivaluedMap<String, String> clientOutgoingHeaders) {
         MultivaluedMap<String, String> result = new MultivaluedHashMap<>();
-        result.add("x-api-key", appConfig.anthropic().apiKey());
+        result.add("x-api-key", appConfig.anthropic().apiKey().orElse(""));
         result.add("anthropic-version", anthropicVersion);
         result.add("content-type", "application/json");
         return result;
