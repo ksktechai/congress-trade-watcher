@@ -212,14 +212,20 @@ Quarkus's REST-client logging, which would dump the auth headers / `?token=`).
 ## Testing
 
 ```bash
-./mvnw verify   # 22 tests
+./mvnw verify   # 22 in-JVM tests (Surefire) + 3 integration tests (Failsafe)
 ```
 
-- `SignalDetectionServiceTest` — pure unit tests, one per rule.
-- `TradeResourceTest` — `@QuarkusTest` + REST Assured over Testcontainers Postgres,
-  exercising the full ingest → signals → digest path (both data sources).
-- `LlmInsightServiceTest` — WireMock stands in for Gemini (default) and Anthropic;
-  the real APIs are **never** called.
+The full testing pyramid:
+
+- **Unit** — `SignalDetectionServiceTest`: plain JUnit, one per rule, no Quarkus.
+- **`@QuarkusTest`** (in-JVM, Surefire) — `TradeResourceTest` (REST Assured over the
+  full app + Testcontainers Postgres, both data sources) and `LlmInsightServiceTest`
+  (WireMock stands in for Gemini/Anthropic; the real APIs are **never** called).
+- **`@QuarkusIntegrationTest`** (packaged jar, Failsafe) — `AppSmokeIT`: black-box
+  HTTP smoke test (health, ingest → trades/members, signal detection) against the
+  built artifact, the way it runs in production.
+- **Dev Services** — `%test` sets no JDBC URL, so Quarkus auto-starts a
+  Testcontainers Postgres for both the `@QuarkusTest`s and the IT.
 
 All external HTTP (congress.kadoa.com, Finnhub, Gemini, Anthropic) is mocked via
 WireMock; Postgres is provided by Quarkus Dev Services (Testcontainers). **No real
