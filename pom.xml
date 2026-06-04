@@ -23,12 +23,24 @@
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <surefire-plugin.version>3.5.0</surefire-plugin.version>
         <wiremock.version>3.9.1</wiremock.version>
+        <!-- Override the Testcontainers version managed by the Quarkus BOM so the
+             bundled docker-java client can negotiate with newer Docker daemons. -->
+        <testcontainers.version>1.21.4</testcontainers.version>
 
         <skipITs>false</skipITs>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Imported first so it overrides the Testcontainers versions the
+                 Quarkus BOM would otherwise manage. -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
