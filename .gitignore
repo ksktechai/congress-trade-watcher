@@ -19,3 +19,7 @@ target/
 # Quarkus
 .quarkus/
 *.log
+
+# draw.io desktop backup / temp files
+*.bkp
+.$*
