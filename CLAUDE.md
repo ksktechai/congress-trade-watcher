@@ -73,14 +73,18 @@ builds `NormalizedTrade`s; wire it into `AdminResource` and `IngestionScheduler`
 
 ## Logging / call tracing
 
-The call sequence is logged at INFO so you can follow it in the console:
-`API REQUEST/RESPONSE` (`ApiAccessLoggingFilter`, skips `/q/*`),
-`INGEST REQUEST/RESPONSE` (per ticker), `DIGEST step 1..3/3`, and
-`LLM REQUEST/RESPONSE` (provider, model, char counts, token usage, timing,
-finishReason). In `%dev` the app package is DEBUG, which also prints the **full
-LLM prompts and response bodies**. **Never log API keys** — that's why we use
-app-level logging instead of Quarkus's blanket REST-client logging (which would
-dump the `x-api-key`/`X-goog-api-key` headers and Finnhub's `?token=`).
+Each request gets a **correlation id** in the MDC (`ApiAccessLoggingFilter`),
+surfaced as `[%X{correlationId}]` in the log format and echoed as the
+`X-Correlation-ID` header, so all lines of one call group together. Inbound
+request/response (+ body) is logged with `-->`/`<--`; outbound HTTP to every
+`@RegisterRestClient` (Finnhub/Gemini/Anthropic/congress-data) with `==>`/`<==`
+via `ExternalClientLoggingFilter`. Bodies are capped at
+`watcher.logging.payload-max-chars`. **Secrets are masked** by `LogSupport`
+(token/apikey/key query params → `***`; auth headers never logged) — that's why
+we use these custom filters instead of Quarkus's blanket REST-client logging.
+Higher-level business logs (`DIGEST step 1..3/3`, LLM token usage, ingestion
+summaries) stay; redundant per-HTTP-call logs were removed in favour of the
+client filter. In `%dev` the app package is DEBUG.
 
 ## LLM provider (narration only)
 

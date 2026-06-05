@@ -1,49 +1,80 @@
 package nz.co.ksktech.congresstrades.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
+import nz.co.ksktech.congresstrades.logging.LogSupport;
+import org.jboss.logging.MDC;
 import org.jboss.logging.Logger;
 
+import java.util.UUID;
+
 /**
- * Logs each inbound API call as a request/response pair, bracketing the service
- * work in between so the full sequence of calls is readable in the logs:
+ * Inbound API logging. For each call it:
+ * <ul>
+ *   <li>assigns a <strong>correlation id</strong> (reused from the
+ *       {@code X-Correlation-ID} request header, or generated) and puts it in the
+ *       MDC so it prefixes every log line of that request — and echoes it back as
+ *       a response header;</li>
+ *   <li>logs the request line and the response line (status + duration);</li>
+ *   <li>logs the response body, masked and capped (see {@link LogSupport}).</li>
+ * </ul>
  *
- * <pre>
- * API REQUEST  → GET /api/v1/digest/daily
- * DIGEST step 1/3 ...
- * INGEST/LLM REQUEST/RESPONSE ...
- * API RESPONSE ← GET /api/v1/digest/daily : 200 (842ms)
- * </pre>
- *
- * <p>Management endpoints ({@code /q/*}: health, openapi, swagger) are skipped to
- * keep the log focused on the application API.</p>
+ * <p>Management endpoints ({@code /q/*}) are skipped.</p>
  */
 @Provider
+@Priority(Priorities.USER)
 public class ApiAccessLoggingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
-    private static final Logger LOG = Logger.getLogger("nz.co.ksktech.congresstrades.api.access");
-    private static final String START_NANOS = "apiAccess.startNanos";
+    private static final Logger LOG = Logger.getLogger("nz.co.ksktech.congresstrades.http");
+    private static final String START_NANOS = "apiLog.startNanos";
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public void filter(ContainerRequestContext request) {
+        String correlationId = request.getHeaderString(LogSupport.CORRELATION_HEADER);
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString().substring(0, 8);
+        }
+        MDC.put(LogSupport.MDC_CORRELATION_ID, correlationId);
         request.setProperty(START_NANOS, System.nanoTime());
+
         if (!skip(request)) {
-            LOG.infof("API REQUEST  → %s %s", request.getMethod(), pathWithQuery(request));
+            LOG.infof("--> %s %s", request.getMethod(), pathWithQuery(request));
         }
     }
 
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) {
-        if (skip(request)) {
-            return;
+        try {
+            if (skip(request)) {
+                return;
+            }
+            Object correlationId = MDC.get(LogSupport.MDC_CORRELATION_ID);
+            if (correlationId != null) {
+                response.getHeaders().putSingle(LogSupport.CORRELATION_HEADER, correlationId);
+            }
+
+            Object start = request.getProperty(START_NANOS);
+            long ms = (start instanceof Long s) ? (System.nanoTime() - s) / 1_000_000 : -1;
+            LOG.infof("<-- %d %s %s (%dms)",
+                    response.getStatus(), request.getMethod(), pathWithQuery(request), ms);
+
+            String body = LogSupport.preview(objectMapper, response.getEntity());
+            if (!body.isEmpty()) {
+                LOG.infof("<-- response body: %s", body);
+            }
+        } finally {
+            MDC.remove(LogSupport.MDC_CORRELATION_ID);
         }
-        Object start = request.getProperty(START_NANOS);
-        long ms = (start instanceof Long s) ? (System.nanoTime() - s) / 1_000_000 : -1;
-        LOG.infof("API RESPONSE ← %s %s : %d (%dms)",
-                request.getMethod(), pathWithQuery(request), response.getStatus(), ms);
     }
 
     private boolean skip(ContainerRequestContext request) {
@@ -53,6 +84,6 @@ public class ApiAccessLoggingFilter implements ContainerRequestFilter, Container
     private String pathWithQuery(ContainerRequestContext request) {
         var uri = request.getUriInfo().getRequestUri();
         String path = uri.getRawPath();
-        return uri.getRawQuery() == null ? path : path + "?" + uri.getRawQuery();
+        return uri.getRawQuery() == null ? path : LogSupport.maskUrl(path + "?" + uri.getRawQuery());
     }
 }

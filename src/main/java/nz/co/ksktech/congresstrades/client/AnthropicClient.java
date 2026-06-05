@@ -11,6 +11,7 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import java.time.temporal.ChronoUnit;
@@ -26,6 +27,7 @@ import java.time.temporal.ChronoUnit;
  */
 @RegisterRestClient(configKey = "anthropic-api")
 @RegisterClientHeaders(AnthropicHeadersFactory.class)
+@RegisterProvider(ExternalClientLoggingFilter.class)
 @Path("/v1")
 public interface AnthropicClient {
 

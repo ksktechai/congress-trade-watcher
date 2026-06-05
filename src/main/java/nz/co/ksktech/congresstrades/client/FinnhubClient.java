@@ -11,6 +11,7 @@ import nz.co.ksktech.congresstrades.client.dto.QuoteResponse;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import java.time.temporal.ChronoUnit;
@@ -26,6 +27,7 @@ import java.time.temporal.ChronoUnit;
  * <p>Base URL is configured via {@code quarkus.rest-client.finnhub-api.url}.</p>
  */
 @RegisterRestClient(configKey = "finnhub-api")
+@RegisterProvider(ExternalClientLoggingFilter.class)
 @Path("/api/v1")
 @Produces(MediaType.APPLICATION_JSON)
 public interface FinnhubClient {

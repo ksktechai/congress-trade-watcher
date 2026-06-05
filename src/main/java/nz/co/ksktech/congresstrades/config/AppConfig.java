@@ -23,6 +23,14 @@ public interface AppConfig {
 
     Signals signals();
 
+    Logging logging();
+
+    interface Logging {
+        /** Max characters of a request/response body to log; 0 disables body logging. */
+        @WithDefault("2000")
+        int payloadMaxChars();
+    }
+
     interface Finnhub {
         /** Empty when {@code FINNHUB_API_KEY} is unset; the app still boots. */
         Optional<String> apiKey();

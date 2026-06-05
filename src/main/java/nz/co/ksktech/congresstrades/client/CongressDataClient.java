@@ -9,6 +9,7 @@ import nz.co.ksktech.congresstrades.client.dto.CongressTickerTrades;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import java.time.temporal.ChronoUnit;
@@ -21,6 +22,7 @@ import java.time.temporal.ChronoUnit;
  * <p>Base URL is configured via {@code quarkus.rest-client.congress-data.url}.</p>
  */
 @RegisterRestClient(configKey = "congress-data")
+@RegisterProvider(ExternalClientLoggingFilter.class)
 @Path("/data")
 @Produces(MediaType.APPLICATION_JSON)
 public interface CongressDataClient {

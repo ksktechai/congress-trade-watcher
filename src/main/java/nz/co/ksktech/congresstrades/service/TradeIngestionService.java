@@ -78,13 +78,9 @@ public class TradeIngestionService {
 
     private void ingestTicker(String ticker, IngestionResult result) {
         String token = appConfig.finnhub().apiKey().orElse("");
-        LOG.infof("INGEST REQUEST  → finnhub GET /api/v1/stock/congressional-trading?symbol=%s", ticker);
-        long start = System.currentTimeMillis();
         CongressionalTradingResponse response = finnhubClient.getCongressionalTrades(ticker, token);
         List<CongressionalTrade> trades = response.data();
         result.tradesFetched += trades.size();
-        LOG.infof("INGEST RESPONSE ← finnhub %s: %d trades (%dms)",
-                ticker, trades.size(), System.currentTimeMillis() - start);
 
         String symbol = ticker.toUpperCase();
         QuarkusTransaction.requiringNew().run(() -> {

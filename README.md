@@ -208,20 +208,26 @@ Sequence diagrams cover **every REST endpoint**:
 
 ## Observability / logging
 
-The call sequence is logged at INFO so you can follow it in the console — these
-lines mirror the [digest sequence diagram](docs/sequence-digest.png):
+Every request is assigned a **correlation id** (the `[........]` field in each log
+line, also returned as the `X-Correlation-ID` response header, and reused if you
+send that header in). All lines of one call share it, so they group together. Per
+call you get, at INFO:
 
 ```
-API REQUEST  → GET /api/v1/digest/daily?refresh=true
-DIGEST build start … step 1/3 (47 trades) … step 2/3 (22 signals)
-LLM REQUEST  → gemini POST …generateContent (systemChars=918, userChars=8154, maxTokens=2048, thinkingBudget=0)
-LLM RESPONSE ← gemini (8905ms, finishReason=STOP, chars=4949, tokens 4150/1929/null)
-API RESPONSE ← GET /api/v1/digest/daily?refresh=true : 200 (8984ms)
+[8c99a937] [n.c.k.c.http] --> GET /api/v1/insider-transactions?symbol=TSLA&from=2026-05-01
+[8c99a937] [n.c.k.c.ext]  ==> GET https://finnhub.io/api/v1/stock/insider-transactions?symbol=TSLA&token=***
+[8c99a937] [n.c.k.c.ext]  <== 200 GET https://finnhub.io/... (1144ms)
+[8c99a937] [n.c.k.c.ext]  <== response body: {"data":[{"name":"Taneja Vaibhav", ...
+[8c99a937] [n.c.k.c.http] <-- 200 GET /api/v1/insider-transactions?... (1195ms)
+[8c99a937] [n.c.k.c.http] <-- response body: {"symbol":"TSLA","count":5, ...
 ```
 
-In `%dev` the app package logs at DEBUG, which also prints the **full LLM prompts
-and response bodies**. API keys are **never** logged (logging is app-level, not
-Quarkus's REST-client logging, which would dump the auth headers / `?token=`).
+- `-->` / `<--` = inbound (our API); `==>` / `<==` = outbound (Finnhub/Gemini/etc).
+- **Secrets are always masked** — `token`/`apikey`/`key` query params become `***`
+  and auth headers (`x-api-key`, `X-goog-api-key`, `Authorization`) are never logged.
+- Response bodies are logged, **capped** at `watcher.logging.payload-max-chars`
+  (default 2000; set to `0` to disable body logging).
+- In `%dev` the app package logs at DEBUG (full LLM prompts, etc.).
 
 ## Testing
 

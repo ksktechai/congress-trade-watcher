@@ -12,6 +12,7 @@ import nz.co.ksktech.congresstrades.client.dto.GeminiGenerateResponse;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import java.time.temporal.ChronoUnit;
@@ -27,6 +28,7 @@ import java.time.temporal.ChronoUnit;
  * <p>Base URL is configured via {@code quarkus.rest-client.gemini-api.url}.</p>
  */
 @RegisterRestClient(configKey = "gemini-api")
+@RegisterProvider(ExternalClientLoggingFilter.class)
 @Path("/v1beta")
 public interface GeminiClient {
 

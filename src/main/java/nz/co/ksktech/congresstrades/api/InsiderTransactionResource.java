@@ -14,7 +14,6 @@ import nz.co.ksktech.congresstrades.config.Disclaimers;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.jboss.logging.Logger;
 
 import java.util.List;
 
@@ -29,8 +28,6 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Insider transactions", description = "Corporate insider trades via Finnhub (live, not persisted)")
 public class InsiderTransactionResource {
-
-    private static final Logger LOG = Logger.getLogger(InsiderTransactionResource.class);
 
     private final FinnhubClient finnhubClient;
     private final AppConfig appConfig;
@@ -54,11 +51,8 @@ public class InsiderTransactionResource {
                         "FINNHUB_API_KEY is not configured; the insider-transactions endpoint requires a Finnhub key."));
 
         String ticker = symbol.toUpperCase();
-        LOG.infof("INSIDER REQUEST  → finnhub GET /stock/insider-transactions?symbol=%s&from=%s&to=%s",
-                ticker, from, to);
         InsiderTransactionsResponse response = finnhubClient.getInsiderTransactions(ticker, from, to, token);
         List<InsiderTransaction> transactions = response.data();
-        LOG.infof("INSIDER RESPONSE ← finnhub %s: %d transactions", ticker, transactions.size());
 
         return new InsiderTransactionsResponseDto(
                 ticker, from, to, transactions.size(), transactions, Disclaimers.NOT_FINANCIAL_ADVICE);
