@@ -82,10 +82,12 @@ public final class LogSupport {
         CappedWriter writer = new CappedWriter(cap);
         try {
             mapper.writeValue(writer, entity);
-        } catch (CappedWriter.Stop ignored) {
-            // reached the cap; stop serialising early
         } catch (Exception e) {
-            return "<unserializable: " + e.getMessage() + ">";
+            // Jackson may wrap our Stop signal in a JsonMappingException, so detect
+            // the cap via the writer's own flag rather than the exception type.
+            if (!writer.truncated()) {
+                return "<unserializable: " + e.getMessage() + ">";
+            }
         }
         return writer.truncated() ? writer + " …(truncated)" : writer.toString();
     }
