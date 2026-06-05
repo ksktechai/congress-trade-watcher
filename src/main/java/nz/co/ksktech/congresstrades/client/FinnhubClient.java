@@ -6,6 +6,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import nz.co.ksktech.congresstrades.client.dto.CongressionalTradingResponse;
+import nz.co.ksktech.congresstrades.client.dto.InsiderTransactionsResponse;
 import nz.co.ksktech.congresstrades.client.dto.QuoteResponse;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
@@ -50,4 +51,19 @@ public interface FinnhubClient {
     @CircuitBreaker(requestVolumeThreshold = 8, failureRatio = 0.5, delay = 10000)
     QuoteResponse getQuote(@QueryParam("symbol") String symbol,
                            @QueryParam("token") String token);
+
+    /**
+     * Corporate-insider (SEC Form 3/4/5) transactions for a ticker, optionally
+     * bounded by from/to dates (ISO {@code yyyy-MM-dd}). Null date params are
+     * omitted from the request.
+     */
+    @GET
+    @Path("/stock/insider-transactions")
+    @Timeout(value = 8, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 500)
+    @CircuitBreaker(requestVolumeThreshold = 8, failureRatio = 0.5, delay = 10000)
+    InsiderTransactionsResponse getInsiderTransactions(@QueryParam("symbol") String symbol,
+                                                       @QueryParam("from") String from,
+                                                       @QueryParam("to") String to,
+                                                       @QueryParam("token") String token);
 }

@@ -394,6 +394,40 @@
         "description": "SmallRye health readiness (includes a DB check)."
       },
       "response": []
+    },
+    {
+      "name": "insider-transactions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "description": "Corporate insider (SEC Form 3/4/5) transactions via Finnhub. Live passthrough; requires FINNHUB_API_KEY. symbol is required; from/to are optional ISO dates.",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/insider-transactions?symbol=TSLA&from=2026-01-01&to=2026-06-05",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "insider-transactions"
+          ],
+          "query": [
+            {
+              "key": "symbol",
+              "value": "TSLA"
+            },
+            {
+              "key": "from",
+              "value": "2026-01-01"
+            },
+            {
+              "key": "to",
+              "value": "2026-06-05"
+            }
+          ]
+        }
+      },
+      "response": []
     }
   ],
   "variable": [

@@ -125,6 +125,10 @@ curl "http://localhost:8080/api/v1/digest/daily?refresh=true"  # bypass cache, f
 curl "http://localhost:8080/api/v1/reactive/trades?ticker=AAPL"          # Uni<List<TradeDto>>
 curl -N -H "Accept: text/event-stream" \
      "http://localhost:8080/api/v1/reactive/tickers"                     # Multi<String> as SSE
+
+# Insider transactions — corporate insiders (SEC Form 3/4/5) via Finnhub.
+# Live passthrough (not persisted); requires FINNHUB_API_KEY. symbol is required.
+curl "http://localhost:8080/api/v1/insider-transactions?symbol=TSLA&from=2026-01-01&to=2026-06-05"
 ```
 
 > **Blocking vs reactive:** the app is intentionally **blocking** (Hibernate ORM

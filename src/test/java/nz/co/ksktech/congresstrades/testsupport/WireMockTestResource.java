@@ -125,6 +125,30 @@ public class WireMockTestResource implements QuarkusTestResourceLifecycleManager
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
                         .withBody(quoteBody)));
+
+        String insiderBody = """
+                {
+                  "data": [
+                    {
+                      "name": "Taneja Vaibhav", "share": 711920, "change": -2000,
+                      "filingDate": "2026-05-15", "transactionDate": "2026-05-13",
+                      "transactionCode": "M", "transactionPrice": 0, "isDerivative": true,
+                      "currency": "", "source": "sec", "symbol": "TSLA", "id": "0001104659-26-062860"
+                    },
+                    {
+                      "name": "Musk Elon", "share": 423743904, "change": -96000000,
+                      "filingDate": "2026-04-23", "transactionDate": "2026-04-21",
+                      "transactionCode": "D", "transactionPrice": 0, "isDerivative": false,
+                      "currency": "", "source": "sec", "symbol": "TSLA", "id": "0001104659-26-047678"
+                    }
+                  ],
+                  "symbol": "TSLA"
+                }
+                """;
+        wireMockServer.stubFor(get(urlPathEqualTo("/api/v1/stock/insider-transactions"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(insiderBody)));
     }
 
     private void stubAnthropic() {
