@@ -40,7 +40,7 @@
         <mxCell id="digest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0de;strokeColor=#996185;arcSize=8;gradientColor=#d5739d;" value="DigestService — @CacheResult (per day)" vertex="1">
           <mxGeometry height="46" width="420" x="530" y="398" as="geometry" />
         </mxCell>
-        <mxCell id="llm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcd28;strokeColor=#d79b00;arcSize=8;gradientColor=#ffa500;" value="LlmInsightService + LlmProvider&#xa;(Gemini default / Anthropic) — narration only" vertex="1">
+        <mxCell id="llm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcd28;strokeColor=#d79b00;arcSize=8;gradientColor=#ffa500;" value="LlmInsightService + LlmProvider&#xa;(Gemini / OpenRouter / Anthropic) — narration only" vertex="1">
           <mxGeometry height="52" width="420" x="530" y="466" as="geometry" />
         </mxCell>
         <mxCell id="perf" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;arcSize=8;" value="PerformanceTrackingService" vertex="1">
@@ -55,8 +55,11 @@
         <mxCell id="gemini" parent="1" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;gradientColor=#97d077;" value="Google Gemini API&#xa;FREE · default narrator" vertex="1">
           <mxGeometry height="70" width="250" x="1020" y="530" as="geometry" />
         </mxCell>
+        <mxCell id="openrouter" parent="1" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;dashed=1;gradientColor=#97d077;" value="OpenRouter API&#xa;free models · optional" vertex="1">
+          <mxGeometry height="60" width="250" x="1020" y="612" as="geometry" />
+        </mxCell>
         <mxCell id="anthropic" parent="1" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;gradientColor=#7ea6e0;" value="Anthropic Claude API&#xa;optional narrator" vertex="1">
-          <mxGeometry height="64" width="250" x="1020" y="646" as="geometry" />
+          <mxGeometry height="60" width="250" x="1020" y="684" as="geometry" />
         </mxCell>
         <mxCell id="repos" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=8;gradientColor=#ea6b66;" value="Repositories (Panache)&#xa;Trade · Member · Signal · Watchlist" vertex="1">
           <mxGeometry height="60" width="250" x="1030" y="300" as="geometry" />
@@ -111,6 +114,9 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e13" edge="1" parent="1" source="llm" style="endArrow=block;html=1;strokeColor=#82B366;rounded=1;strokeWidth=3;" target="gemini">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13b" edge="1" parent="1" source="llm" style="endArrow=block;html=1;strokeColor=#82B366;rounded=1;dashed=1;strokeWidth=3;exitX=0.6;exitY=1;exitDx=0;exitDy=0;" target="openrouter">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e14" edge="1" parent="1" source="llm" style="endArrow=block;html=1;strokeColor=#6C8EBF;rounded=1;dashed=1;strokeWidth=3;exitX=0.75;exitY=1;exitDx=0;exitDy=0;" target="anthropic">

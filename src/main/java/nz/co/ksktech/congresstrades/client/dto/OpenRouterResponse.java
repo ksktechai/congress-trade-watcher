@@ -13,6 +13,7 @@ import java.util.List;
 public record OpenRouterResponse(
         String id,
         String model,
+        String provider,
         List<Choice> choices,
         Usage usage
 ) {

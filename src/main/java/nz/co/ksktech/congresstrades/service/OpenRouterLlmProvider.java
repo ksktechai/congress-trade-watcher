@@ -53,8 +53,9 @@ public class OpenRouterLlmProvider implements LlmProvider {
 
         String text = response.firstText();
         OpenRouterResponse.Usage usage = response.usage();
-        LOG.infof("LLM via openrouter (model=%s, finishReason=%s, chars=%d, tokens prompt/completion=%s/%s)",
-                cfg.model(), response.finishReason(), text.length(),
+        LOG.infof("LLM via openrouter (requested=%s, served=%s/%s, finishReason=%s, chars=%d, "
+                        + "tokens prompt/completion=%s/%s)",
+                cfg.model(), response.provider(), response.model(), response.finishReason(), text.length(),
                 usage != null ? usage.promptTokens() : "?",
                 usage != null ? usage.completionTokens() : "?");
         return text;

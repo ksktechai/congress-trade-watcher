@@ -17,16 +17,16 @@ skinparam participant {
 }
 
 actor "Client / cURL" as C #607D8B
-participant "DigestResource\n+ Access-log filter" as API #4C78A8
+participant "DigestResource\n+ correlation-id logging" as API #4C78A8
 participant "DigestService\n@CacheResult (per day)" as DS #8E6FB0
 database "PostgreSQL\n(via Panache repos)" as DB #43A047
 participant "SignalService +\nSignalDetection (PURE)" as SG #5AA469
-participant "LlmInsightService +\nGeminiLlmProvider" as LM #E0922F
-participant "Gemini API\n(free)" as GEM #6C8EBF
+participant "LlmInsightService +\nLlmProvider (selected)" as LM #E0922F
+participant "LLM API\nGemini / OpenRouter / Anthropic" as GEM #6C8EBF
 
 C -> API: GET /digest/daily?refresh=true
 activate API
-note right of API #ECEFF1: log: API REQUEST →
+note right of API #ECEFF1: log: --> request (new correlation id)
 
 opt refresh=true
   API -> DS: clearCache()
@@ -52,10 +52,10 @@ else cache MISS
   DS -> LM: generateNarrative(trades, signals)
   activate LM
   LM -> LM: build prompt\n(system rules + computed data)
-  note right of LM #ECEFF1: log: LLM REQUEST →
-  LM -> GEM: POST generateContent\n(systemInstruction + contents, thinkingBudget=0)
-  GEM -->> LM: candidates[].text (+ token usage)
-  note right of LM #ECEFF1: log: LLM RESPONSE ←
+  note right of LM #ECEFF1: log: ==> LLM request (masked)
+  LM -> GEM: POST chat/generate\n(system prompt + computed data)
+  GEM -->> LM: narrative text (+ token usage)
+  note right of LM #ECEFF1: log: <== LLM response
   LM -->> DS: narrative text
   deactivate LM
 
@@ -65,8 +65,8 @@ end
 
 DS -->> API: DigestResponse\n(narrative + signals + disclaimer)
 deactivate DS
-note right of API #ECEFF1: log: API RESPONSE ← 200
-API -->> C: 200 application/json
+note right of API #ECEFF1: log: <-- response 200 (+ body)
+API -->> C: 200 application/json  (X-Correlation-ID)
 deactivate API
 
 note across #FFFDE7
