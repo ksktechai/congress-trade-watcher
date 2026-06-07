@@ -35,13 +35,39 @@ public class WireMockTestResource implements QuarkusTestResourceLifecycleManager
         stubFinnhub();
         stubAnthropic();
         stubGemini();
+        stubOpenRouter();
 
         String baseUrl = wireMockServer.baseUrl();
         return Map.of(
                 "quarkus.rest-client.congress-data.url", baseUrl,
                 "quarkus.rest-client.finnhub-api.url", baseUrl,
                 "quarkus.rest-client.anthropic-api.url", baseUrl,
-                "quarkus.rest-client.gemini-api.url", baseUrl);
+                "quarkus.rest-client.gemini-api.url", baseUrl,
+                "quarkus.rest-client.openrouter-api.url", baseUrl);
+    }
+
+    private void stubOpenRouter() {
+        String body = """
+                {
+                  "id": "gen-test-123",
+                  "model": "openrouter/free",
+                  "choices": [
+                    {
+                      "index": 0,
+                      "message": {
+                        "role": "assistant",
+                        "content": "MOCK OPENROUTER DIGEST: Two disclosures were observed. Remember these are delayed up to 45 days and amounts are ranges. This is not financial advice."
+                      },
+                      "finish_reason": "stop"
+                    }
+                  ],
+                  "usage": {"prompt_tokens": 120, "completion_tokens": 60, "total_tokens": 180}
+                }
+                """;
+        wireMockServer.stubFor(post(urlPathEqualTo("/api/v1/chat/completions"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(body)));
     }
 
     private void stubCongressData() {

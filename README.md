@@ -66,14 +66,15 @@ The API is then at <http://localhost:8080>, with:
 Only **one** key is required for a full run — a Gemini key for the digest. The
 default trade-data source needs **no key**.
 
-| Variable            | Required? | Where to get it                          | Used for                                       |
-|---------------------|-----------|------------------------------------------|------------------------------------------------|
-| `GEMINI_API_KEY`    | yes (for digest) | https://aistudio.google.com/apikey | Digest narration (default provider, free tier) |
-| `ANTHROPIC_API_KEY` | optional  | https://console.anthropic.com → API Keys | Digest narration if `LLM_PROVIDER=anthropic`   |
-| `FINNHUB_API_KEY`   | optional  | https://finnhub.io → Dashboard → API Keys | Only if you ingest with `?source=finnhub` (premium endpoint) |
+| Variable             | Required? | Where to get it                          | Used for                                       |
+|----------------------|-----------|------------------------------------------|------------------------------------------------|
+| `GEMINI_API_KEY`     | yes (for digest) | https://aistudio.google.com/apikey | Digest narration (default provider, free tier) |
+| `OPENROUTER_API_KEY` | optional  | https://openrouter.ai/keys               | Digest narration if `LLM_PROVIDER=openrouter` (free models) |
+| `ANTHROPIC_API_KEY`  | optional  | https://console.anthropic.com → API Keys | Digest narration if `LLM_PROVIDER=anthropic`   |
+| `FINNHUB_API_KEY`    | optional  | https://finnhub.io → Dashboard → API Keys | Only if you ingest with `?source=finnhub` (premium endpoint) |
 
 The narration provider is selectable via `LLM_PROVIDER` (`gemini` — default, free
-— or `anthropic`). The trade-data source is selectable via `INGESTION_SOURCE`
+— `openrouter`, or `anthropic`). The trade-data source is selectable via `INGESTION_SOURCE`
 (`congress` — default, free, no key — or `finnhub`). All keys are referenced in
 `application.properties` as `${...}` and read from the environment. **No secret is
 ever stored in a properties file.**
@@ -191,7 +192,7 @@ Sequence diagrams cover **every REST endpoint**:
    `CLUSTER`, `OUTLIER`, `LATE_DISCLOSURE`, `SECTOR_CONCENTRATION`.
 3. **Digest** (`DigestService` + `LlmInsightService`) builds a structured prompt
    from the computed trades/signals and asks the configured `LlmProvider` (Gemini
-   by default, Anthropic optional) to write a neutral briefing. The result is
+   by default; OpenRouter or Anthropic optional) to write a neutral briefing. The result is
    cached per day so repeated calls don't re-bill the LLM (use `?refresh=true` to
    force a fresh call).
 
@@ -200,7 +201,7 @@ Sequence diagrams cover **every REST endpoint**:
 | Property / env | Default | Effect |
 |---|---|---|
 | `INGESTION_SOURCE` / `ingestion.source` | `congress` | Trade source: `congress` (free) or `finnhub` |
-| `LLM_PROVIDER` / `watcher.llm.provider` | `gemini` | Digest narrator: `gemini` (free) or `anthropic` |
+| `LLM_PROVIDER` / `watcher.llm.provider` | `gemini` | Digest narrator: `gemini` (free), `openrouter` (free models), or `anthropic` |
 | `watcher.gemini.model` | `gemini-flash-latest` | Gemini model |
 | `watcher.gemini.thinking-budget` | `0` | `0` disables 2.5-series "thinking" (avoids truncated output) |
 | `watcher.signals.*` | see properties | Thresholds for each signal rule |

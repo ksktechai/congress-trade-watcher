@@ -112,7 +112,8 @@ public class LlmInsightService {
         if (!provider.isConfigured()) {
             throw new LlmUnavailableException(String.format(
                     "LLM provider '%s' is not configured; set its API key "
-                            + "(GEMINI_API_KEY or ANTHROPIC_API_KEY) to generate the digest.", providerId));
+                            + "(GEMINI_API_KEY, OPENROUTER_API_KEY or ANTHROPIC_API_KEY) to generate the digest.",
+                    providerId));
         }
         String userPrompt = buildUserPrompt(date, trades, signals);
         try {
@@ -138,6 +139,6 @@ public class LlmInsightService {
             }
         }
         throw new LlmUnavailableException(
-                "Unknown LLM provider '" + providerId + "'. Supported: gemini, anthropic.");
+                "Unknown LLM provider '" + providerId + "'. Supported: gemini, openrouter, anthropic.");
     }
 }

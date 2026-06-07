@@ -1,0 +1,50 @@
+package nz.co.ksktech.congresstrades.client.dto;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+
+/**
+ * Response body from OpenRouter's {@code chat/completions} (OpenAI shape). The
+ * text is at {@code choices[0].message.content}; {@link #firstText()} extracts it.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record OpenRouterResponse(
+        String id,
+        String model,
+        List<Choice> choices,
+        Usage usage
+) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Choice(int index, Message message, @JsonProperty("finish_reason") String finishReason) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Message(String role, String content) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Usage(
+            @JsonProperty("prompt_tokens") int promptTokens,
+            @JsonProperty("completion_tokens") int completionTokens,
+            @JsonProperty("total_tokens") int totalTokens
+    ) {
+    }
+
+    public String firstText() {
+        if (choices == null || choices.isEmpty()) {
+            return "";
+        }
+        Choice first = choices.get(0);
+        if (first == null || first.message() == null || first.message().content() == null) {
+            return "";
+        }
+        return first.message().content();
+    }
+
+    public String finishReason() {
+        return (choices == null || choices.isEmpty() || choices.get(0) == null)
+                ? null : choices.get(0).finishReason();
+    }
+}

@@ -21,6 +21,8 @@ public interface AppConfig {
 
     Gemini gemini();
 
+    OpenRouter openrouter();
+
     Signals signals();
 
     Logging logging();
@@ -67,6 +69,21 @@ public interface AppConfig {
          *  (recommended for narration), negative omits the field. */
         @WithDefault("0")
         int thinkingBudget();
+    }
+
+    interface OpenRouter {
+        /** Empty when {@code OPENROUTER_API_KEY} is unset; the app still boots. */
+        Optional<String> apiKey();
+
+        @WithDefault("openrouter/free")
+        String model();
+
+        @WithDefault("2048")
+        int maxTokens();
+
+        /** Enable the model's reasoning phase; off by default for narration. */
+        @WithDefault("false")
+        boolean reasoning();
     }
 
     interface Signals {

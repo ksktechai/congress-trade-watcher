@@ -36,6 +36,9 @@ class LlmInsightServiceTest {
     @Inject
     AnthropicLlmProvider anthropicLlmProvider;
 
+    @Inject
+    OpenRouterLlmProvider openRouterLlmProvider;
+
     @Test
     void buildUserPrompt_includesComputedTradesAndSignals() {
         String prompt = llmInsightService.buildUserPrompt(
@@ -73,6 +76,19 @@ class LlmInsightServiceTest {
                 postRequestedFor(urlPathMatching("/v1/messages"))
                         .withRequestBody(containing("AAPL"))
                         .withRequestBody(containing("claude-sonnet-4-5")));
+    }
+
+    @Test
+    void openRouterProvider_callsOpenRouterAndParsesResponse() {
+        String text = openRouterLlmProvider.generate(
+                LlmInsightService.SYSTEM_PROMPT,
+                llmInsightService.buildUserPrompt(LocalDate.of(2026, 6, 4), sampleTrades(), sampleSignals()));
+
+        assertTrue(text.startsWith("MOCK OPENROUTER DIGEST"), "should return the parsed OpenRouter text");
+        WireMockTestResource.server().verify(
+                postRequestedFor(urlPathMatching("/api/v1/chat/completions"))
+                        .withRequestBody(containing("AAPL"))
+                        .withRequestBody(containing("openrouter/free")));
     }
 
     @Test
