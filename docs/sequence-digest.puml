@@ -22,7 +22,7 @@ participant "DigestService\n@CacheResult (per day)" as DS #8E6FB0
 database "PostgreSQL\n(via Panache repos)" as DB #43A047
 participant "SignalService +\nSignalDetection (PURE)" as SG #5AA469
 participant "LlmInsightService +\nLlmProvider (selected)" as LM #E0922F
-participant "LLM API\nGemini / OpenRouter / Anthropic" as GEM #6C8EBF
+participant "LLM API\nGemini / OpenRouter / Ollama(local) / Anthropic" as GEM #6C8EBF
 
 C -> API: GET /digest/daily?refresh=true
 activate API

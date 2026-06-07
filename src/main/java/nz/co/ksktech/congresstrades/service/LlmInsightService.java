@@ -139,6 +139,6 @@ public class LlmInsightService {
             }
         }
         throw new LlmUnavailableException(
-                "Unknown LLM provider '" + providerId + "'. Supported: gemini, openrouter, anthropic.");
+                "Unknown LLM provider '" + providerId + "'. Supported: gemini, openrouter, ollama, anthropic.");
     }
 }

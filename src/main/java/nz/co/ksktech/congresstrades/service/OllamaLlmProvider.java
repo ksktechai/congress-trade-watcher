@@ -2,7 +2,7 @@ package nz.co.ksktech.congresstrades.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import nz.co.ksktech.congresstrades.client.OpenRouterClient;
+import nz.co.ksktech.congresstrades.client.OllamaClient;
 import nz.co.ksktech.congresstrades.client.dto.ChatCompletionRequest;
 import nz.co.ksktech.congresstrades.client.dto.ChatCompletionResponse;
 import nz.co.ksktech.congresstrades.config.AppConfig;
@@ -12,50 +12,49 @@ import org.jboss.logging.Logger;
 import java.util.List;
 
 /**
- * {@link LlmProvider} backed by OpenRouter (OpenAI-compatible chat completions).
- * The system prompt is sent as a {@code system} message and the computed data as
- * a {@code user} message.
+ * {@link LlmProvider} backed by a local Ollama server (OpenAI-compatible). Needs
+ * no API key, so it is always "configured"; if Ollama is not running the call
+ * fails with a clear connection error surfaced as the digest's 503.
  */
 @ApplicationScoped
-public class OpenRouterLlmProvider implements LlmProvider {
+public class OllamaLlmProvider implements LlmProvider {
 
-    private static final Logger LOG = Logger.getLogger(OpenRouterLlmProvider.class);
+    private static final Logger LOG = Logger.getLogger(OllamaLlmProvider.class);
 
     @Inject
     @RestClient
-    OpenRouterClient openRouterClient;
+    OllamaClient ollamaClient;
 
     @Inject
     AppConfig appConfig;
 
     @Override
     public String id() {
-        return "openrouter";
+        return "ollama";
     }
 
     @Override
     public boolean isConfigured() {
-        return appConfig.openrouter().apiKey().filter(k -> !k.isBlank()).isPresent();
+        // Local, no key. Selecting this provider is itself the opt-in.
+        return true;
     }
 
     @Override
     public String generate(String systemPrompt, String userPrompt) {
-        AppConfig.OpenRouter cfg = appConfig.openrouter();
+        AppConfig.Ollama cfg = appConfig.ollama();
         ChatCompletionRequest request = new ChatCompletionRequest(
                 cfg.model(),
                 List.of(ChatCompletionRequest.Message.system(systemPrompt),
                         ChatCompletionRequest.Message.user(userPrompt)),
                 cfg.maxTokens(),
-                cfg.reasoning() ? new ChatCompletionRequest.Reasoning(true) : null);
+                null);
 
-        ChatCompletionResponse response = openRouterClient.chatCompletions(
-                "Bearer " + cfg.apiKey().orElse(""), request);
+        ChatCompletionResponse response = ollamaClient.chatCompletions(request);
 
         String text = response.firstText();
         ChatCompletionResponse.Usage usage = response.usage();
-        LOG.infof("LLM via openrouter (requested=%s, served=%s/%s, finishReason=%s, chars=%d, "
-                        + "tokens prompt/completion=%s/%s)",
-                cfg.model(), response.provider(), response.model(), response.finishReason(), text.length(),
+        LOG.infof("LLM via ollama (model=%s, finishReason=%s, chars=%d, tokens prompt/completion=%s/%s)",
+                cfg.model(), response.finishReason(), text.length(),
                 usage != null ? usage.promptTokens() : "?",
                 usage != null ? usage.completionTokens() : "?");
         return text;

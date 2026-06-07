@@ -23,6 +23,8 @@ public interface AppConfig {
 
     OpenRouter openrouter();
 
+    Ollama ollama();
+
     Signals signals();
 
     Logging logging();
@@ -39,7 +41,8 @@ public interface AppConfig {
     }
 
     interface Llm {
-        /** Which narration provider to use: {@code gemini} or {@code anthropic}. */
+        /** Which narration provider to use: {@code gemini}, {@code openrouter},
+         *  {@code ollama} (local) or {@code anthropic}. */
         @WithDefault("gemini")
         String provider();
     }
@@ -84,6 +87,15 @@ public interface AppConfig {
         /** Enable the model's reasoning phase; off by default for narration. */
         @WithDefault("false")
         boolean reasoning();
+    }
+
+    interface Ollama {
+        /** Local Ollama model tag, e.g. {@code qwen3:30b}. No API key needed. */
+        @WithDefault("qwen3:30b")
+        String model();
+
+        @WithDefault("2048")
+        int maxTokens();
     }
 
     interface Signals {

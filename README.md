@@ -7,8 +7,10 @@ digest with an LLM.
 
 Both the data source and the LLM are **pluggable**, and the defaults are **free
 and need no paid key**: real disclosures from the open **Congress Trading Monitor**
-dataset (congress.kadoa.com), narrated by **Google Gemini**. Finnhub (data) and
-Anthropic Claude (narration) are optional alternatives.
+dataset (congress.kadoa.com), narrated by **Google Gemini**. Finnhub (data),
+OpenRouter, a fully **local Ollama** model, and Anthropic Claude (narration) are
+optional alternatives — the local option needs no key and keeps everything on your
+machine.
 
 > ## ⚠️ This is a research and learning tool — NOT financial advice
 >
@@ -70,11 +72,13 @@ default trade-data source needs **no key**.
 |----------------------|-----------|------------------------------------------|------------------------------------------------|
 | `GEMINI_API_KEY`     | yes (for digest) | https://aistudio.google.com/apikey | Digest narration (default provider, free tier) |
 | `OPENROUTER_API_KEY` | optional  | https://openrouter.ai/keys               | Digest narration if `LLM_PROVIDER=openrouter` (free models) |
+| *(none — local)*     | n/a       | install [Ollama](https://ollama.com)     | Digest narration if `LLM_PROVIDER=ollama` (fully local, no key) |
 | `ANTHROPIC_API_KEY`  | optional  | https://console.anthropic.com → API Keys | Digest narration if `LLM_PROVIDER=anthropic`   |
 | `FINNHUB_API_KEY`    | optional  | https://finnhub.io → Dashboard → API Keys | Only if you ingest with `?source=finnhub` (premium endpoint) |
 
 The narration provider is selectable via `LLM_PROVIDER` (`gemini` — default, free
-— `openrouter`, or `anthropic`). The trade-data source is selectable via `INGESTION_SOURCE`
+— `openrouter`, `ollama` — fully local, no key — or `anthropic`). The trade-data
+source is selectable via `INGESTION_SOURCE`
 (`congress` — default, free, no key — or `finnhub`). All keys are referenced in
 `application.properties` as `${...}` and read from the environment. **No secret is
 ever stored in a properties file.**
@@ -82,6 +86,33 @@ ever stored in a properties file.**
 > **Finnhub note:** Finnhub's congressional-trading endpoint requires a paid plan
 > (a free key returns HTTP 403), which is why the free `congress` source is the
 > default.
+
+### Run the digest fully locally with Ollama (no key, nothing leaves your machine)
+
+[Ollama](https://ollama.com) serves an OpenAI-compatible API at
+`http://localhost:11434/v1/chat/completions`, so the app talks to it with the same
+client shape as OpenRouter — just no API key and no rate limits. Everything stays on
+your machine.
+
+```bash
+# 1. Install Ollama (macOS): https://ollama.com/download  — or:  brew install ollama
+# 2. Pull the model the app defaults to (a ~30B local model; pick a smaller tag if needed)
+ollama pull qwen3:30b
+# 3. Make sure the Ollama server is running (the desktop app starts it; or:)
+ollama serve   # listens on 127.0.0.1:11434
+
+# 4. Point the app at the local provider and run
+echo "LLM_PROVIDER=ollama" >> .env
+./mvnw quarkus:dev
+curl -X POST "http://localhost:8080/api/v1/admin/ingest"
+curl "http://localhost:8080/api/v1/digest/daily"
+```
+
+Optional overrides (defaults shown): `OLLAMA_MODEL=qwen3:30b` and
+`OLLAMA_BASE_URL=http://localhost:11434`. No `*_API_KEY` is needed for this provider.
+Because a local model can be slow, the Ollama client uses a generous 180-second read
+timeout. The test suite mocks Ollama with WireMock, so `./mvnw verify` passes whether
+or not Ollama is installed or running.
 
 ## Trigger ingestion manually (dev)
 
@@ -192,7 +223,7 @@ Sequence diagrams cover **every REST endpoint**:
    `CLUSTER`, `OUTLIER`, `LATE_DISCLOSURE`, `SECTOR_CONCENTRATION`.
 3. **Digest** (`DigestService` + `LlmInsightService`) builds a structured prompt
    from the computed trades/signals and asks the configured `LlmProvider` (Gemini
-   by default; OpenRouter or Anthropic optional) to write a neutral briefing. The result is
+   by default; OpenRouter, local Ollama, or Anthropic optional) to write a neutral briefing. The result is
    cached per day so repeated calls don't re-bill the LLM (use `?refresh=true` to
    force a fresh call).
 
@@ -201,7 +232,9 @@ Sequence diagrams cover **every REST endpoint**:
 | Property / env | Default | Effect |
 |---|---|---|
 | `INGESTION_SOURCE` / `ingestion.source` | `congress` | Trade source: `congress` (free) or `finnhub` |
-| `LLM_PROVIDER` / `watcher.llm.provider` | `gemini` | Digest narrator: `gemini` (free), `openrouter` (free models), or `anthropic` |
+| `LLM_PROVIDER` / `watcher.llm.provider` | `gemini` | Digest narrator: `gemini` (free), `openrouter` (free models), `ollama` (local, no key), or `anthropic` |
+| `OLLAMA_MODEL` / `watcher.ollama.model` | `qwen3:30b` | Local Ollama model tag (only used when `LLM_PROVIDER=ollama`) |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Local Ollama server URL |
 | `watcher.gemini.model` | `gemini-flash-latest` | Gemini model |
 | `watcher.gemini.thinking-budget` | `0` | `0` disables 2.5-series "thinking" (avoids truncated output) |
 | `watcher.signals.*` | see properties | Thresholds for each signal rule |
@@ -272,6 +305,8 @@ docker compose --profile tools up -d   # pgAdmin at http://localhost:5050
   the data is real but not continuously live. Thanks to the kadoa-org maintainers.
 - Finnhub Congressional Trading (optional, premium): <https://finnhub.io/docs/api/congressional-trading>
 - Google Gemini API (default narrator): <https://ai.google.dev/api/generate-content>
+- OpenRouter API (optional narrator, OpenAI-compatible): <https://openrouter.ai/docs>
+- Ollama (optional local narrator, OpenAI-compatible): <https://github.com/ollama/ollama/blob/main/docs/openai.md>
 - Anthropic Messages API (optional narrator): <https://docs.anthropic.com/en/api/messages>
 
 This project exists to **learn** and to **research disclosure patterns**, not to

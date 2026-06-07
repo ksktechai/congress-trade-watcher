@@ -92,8 +92,19 @@ The digest narrator is pluggable via `watcher.llm.provider` (`LLM_PROVIDER` env)
 default `gemini`. To add/choose a provider: implement `LlmProvider`
 (`@ApplicationScoped`, with an `id()`), back it with a `@RegisterRestClient`
 client; `LlmInsightService` selects the bean whose `id()` matches the config.
-`GeminiLlmProvider` and `AnthropicLlmProvider` are the two examples. Whatever the
-provider, the no-recommendations system prompt and disclaimer rules still apply.
+Four are shipped: `GeminiLlmProvider`, `OpenRouterLlmProvider`,
+`OllamaLlmProvider` (local), and `AnthropicLlmProvider`. Whatever the provider,
+the no-recommendations system prompt and disclaimer rules still apply.
+
+OpenRouter and Ollama share the OpenAI-compatible chat-completions shape
+(`client/dto/ChatCompletionRequest`/`ChatCompletionResponse`). **Ollama is fully
+local** (`LLM_PROVIDER=ollama`): OpenAI-compatible at
+`http://localhost:11434/v1/chat/completions`, model `qwen3:30b` by default, **no
+API key**, no rate limits, nothing leaves the machine. `OllamaLlmProvider.isConfigured()`
+is always `true` (selecting it is the opt-in); its client uses a generous 180s read
+timeout for slow local models. Tests mock every provider with WireMock, so
+`./mvnw verify` passes without Ollama installed/running. See the README "Run the
+digest fully locally with Ollama" section for setup.
 
 ## Architecture & layering (respect these boundaries)
 

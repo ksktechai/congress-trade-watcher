@@ -36,6 +36,7 @@ public class WireMockTestResource implements QuarkusTestResourceLifecycleManager
         stubAnthropic();
         stubGemini();
         stubOpenRouter();
+        stubOllama();
 
         String baseUrl = wireMockServer.baseUrl();
         return Map.of(
@@ -43,7 +44,32 @@ public class WireMockTestResource implements QuarkusTestResourceLifecycleManager
                 "quarkus.rest-client.finnhub-api.url", baseUrl,
                 "quarkus.rest-client.anthropic-api.url", baseUrl,
                 "quarkus.rest-client.gemini-api.url", baseUrl,
-                "quarkus.rest-client.openrouter-api.url", baseUrl);
+                "quarkus.rest-client.openrouter-api.url", baseUrl,
+                "quarkus.rest-client.ollama-api.url", baseUrl);
+    }
+
+    private void stubOllama() {
+        String body = """
+                {
+                  "id": "chatcmpl-test-1",
+                  "model": "qwen3:30b",
+                  "choices": [
+                    {
+                      "index": 0,
+                      "message": {
+                        "role": "assistant",
+                        "content": "MOCK OLLAMA DIGEST: Two disclosures were observed. Remember these are delayed up to 45 days and amounts are ranges. This is not financial advice."
+                      },
+                      "finish_reason": "stop"
+                    }
+                  ],
+                  "usage": {"prompt_tokens": 120, "completion_tokens": 60, "total_tokens": 180}
+                }
+                """;
+        wireMockServer.stubFor(post(urlPathEqualTo("/v1/chat/completions"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(body)));
     }
 
     private void stubOpenRouter() {

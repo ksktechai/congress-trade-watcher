@@ -20,6 +20,7 @@ cloud "**Congress Trading Monitor**\ncongress.kadoa.com\nFREE · no key · DEFAU
 cloud "Finnhub API\npremium · optional" as finnhub #DAE8FC
 cloud "**Google Gemini**\nFREE · default narrator" as gemini #D5E8D4
 cloud "OpenRouter\nfree models · optional" as openrouter #D5E8D4
+cloud "**Ollama (LOCAL)**\nlocalhost:11434\nno key · nothing leaves host" as ollama #D5E8D4
 cloud "Anthropic Claude\noptional narrator" as anthropic #DAE8FC
 database "PostgreSQL 16\nFlyway-managed" as pg #D5E8D4
 
@@ -41,7 +42,7 @@ rectangle "congress-trade-watcher  (Quarkus)" {
   package "Analysis & digest" {
     component "SignalDetectionService\nPURE CODE — no LLM" as detect #D5E8D4
     component "DigestService\ncache per day" as digest #E1D5E7
-    component "LlmInsightService\n+ LlmProvider: Gemini / OpenRouter / Anthropic" as llm #FFE6CC
+    component "LlmInsightService\n+ LlmProvider: Gemini / OpenRouter / Ollama / Anthropic" as llm #FFE6CC
   }
 
   component "Repositories (Panache)\nTrade · Member · Signal · Watchlist" as repos #F8CECC
@@ -65,6 +66,7 @@ digest --> detect
 digest --> llm
 llm --> gemini
 llm ..> openrouter : optional
+llm ..> ollama : optional · local
 llm ..> anthropic : optional
 
 detect --> repos

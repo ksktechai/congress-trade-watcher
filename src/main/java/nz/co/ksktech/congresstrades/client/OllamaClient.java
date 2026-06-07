@@ -1,7 +1,6 @@
 package nz.co.ksktech.congresstrades.client;
 
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -17,24 +16,25 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Typed client for the OpenRouter OpenAI-compatible chat-completions API.
+ * Typed client for a local <a href="https://ollama.com">Ollama</a> server's
+ * OpenAI-compatible chat-completions endpoint
+ * ({@code http://localhost:11434/v1/chat/completions}).
  *
- * <p>The API key is passed per request as the {@code Authorization: Bearer …}
- * header (never logged). Used <strong>only to narrate</strong> already-computed
- * data. Base URL via {@code quarkus.rest-client.openrouter-api.url}.</p>
+ * <p>Fully local: no API key, no rate limits, nothing leaves the machine. The
+ * timeout is generous because local models can be slow. Base URL via
+ * {@code quarkus.rest-client.ollama-api.url}.</p>
  */
-@RegisterRestClient(configKey = "openrouter-api")
+@RegisterRestClient(configKey = "ollama-api")
 @RegisterProvider(ExternalClientLoggingFilter.class)
-@Path("/api/v1")
-public interface OpenRouterClient {
+@Path("/v1")
+public interface OllamaClient {
 
     @POST
     @Path("/chat/completions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Timeout(value = 30, unit = ChronoUnit.SECONDS)
-    @Retry(maxRetries = 2, delay = 1000)
+    @Timeout(value = 180, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 1, delay = 1000)
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.75, delay = 15000)
-    ChatCompletionResponse chatCompletions(@HeaderParam("Authorization") String authorization,
-                                           ChatCompletionRequest request);
+    ChatCompletionResponse chatCompletions(ChatCompletionRequest request);
 }

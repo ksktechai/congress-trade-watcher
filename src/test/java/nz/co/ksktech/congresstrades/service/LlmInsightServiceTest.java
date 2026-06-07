@@ -39,6 +39,9 @@ class LlmInsightServiceTest {
     @Inject
     OpenRouterLlmProvider openRouterLlmProvider;
 
+    @Inject
+    OllamaLlmProvider ollamaLlmProvider;
+
     @Test
     void buildUserPrompt_includesComputedTradesAndSignals() {
         String prompt = llmInsightService.buildUserPrompt(
@@ -89,6 +92,19 @@ class LlmInsightServiceTest {
                 postRequestedFor(urlPathMatching("/api/v1/chat/completions"))
                         .withRequestBody(containing("AAPL"))
                         .withRequestBody(containing("openrouter/free")));
+    }
+
+    @Test
+    void ollamaProvider_callsLocalOllamaAndParsesResponse() {
+        String text = ollamaLlmProvider.generate(
+                LlmInsightService.SYSTEM_PROMPT,
+                llmInsightService.buildUserPrompt(LocalDate.of(2026, 6, 4), sampleTrades(), sampleSignals()));
+
+        assertTrue(text.startsWith("MOCK OLLAMA DIGEST"), "should return the parsed local Ollama text");
+        WireMockTestResource.server().verify(
+                postRequestedFor(urlPathMatching("/v1/chat/completions"))
+                        .withRequestBody(containing("AAPL"))
+                        .withRequestBody(containing("qwen3:30b")));
     }
 
     @Test

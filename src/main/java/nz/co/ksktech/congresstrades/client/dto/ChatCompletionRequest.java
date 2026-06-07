@@ -6,13 +6,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Request body for OpenRouter's OpenAI-compatible
- * {@code POST /api/v1/chat/completions} endpoint.
- *
- * @see <a href="https://openrouter.ai/docs/api-reference/chat-completion">OpenRouter chat completions</a>
+ * Request body for the OpenAI-compatible {@code POST /chat/completions} endpoint,
+ * shared by every OpenAI-shaped provider (OpenRouter, local Ollama, …).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record OpenRouterRequest(
+public record ChatCompletionRequest(
         String model,
         List<Message> messages,
         @JsonProperty("max_tokens") Integer maxTokens,

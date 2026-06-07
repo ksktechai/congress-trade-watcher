@@ -6,11 +6,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Response body from OpenRouter's {@code chat/completions} (OpenAI shape). The
- * text is at {@code choices[0].message.content}; {@link #firstText()} extracts it.
+ * Response from an OpenAI-compatible {@code chat/completions} endpoint
+ * (OpenRouter, local Ollama, …). The text is at
+ * {@code choices[0].message.content}; extra fields (reasoning, provider, cost,
+ * token details, …) are ignored.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record OpenRouterResponse(
+public record ChatCompletionResponse(
         String id,
         String model,
         String provider,
