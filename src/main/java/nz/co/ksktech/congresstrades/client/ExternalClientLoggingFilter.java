@@ -1,5 +1,7 @@
 package nz.co.ksktech.congresstrades.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.ClientResponseContext;
@@ -22,9 +24,9 @@ import java.nio.charset.StandardCharsets;
  * and with credentials masked.
  *
  * <ul>
- *   <li>Request: {@code ==> METHOD masked-url} (token/api-key query params → ***).
- *       The correlation id is also forwarded as an {@code X-Correlation-ID}
- *       header.</li>
+ *   <li>Request: {@code ==> METHOD masked-url} (token/api-key query params → ***)
+ *       plus a capped body preview. The correlation id is also forwarded as an
+ *       {@code X-Correlation-ID} header.</li>
  *   <li>Response: {@code <== status (Nms) masked-url} plus a capped body preview.</li>
  * </ul>
  *
@@ -36,6 +38,9 @@ public class ExternalClientLoggingFilter implements ClientRequestFilter, ClientR
     private static final Logger LOG = Logger.getLogger("nz.co.ksktech.congresstrades.ext");
     private static final String START_NANOS = "extLog.startNanos";
 
+    @Inject
+    ObjectMapper objectMapper;
+
     @Override
     public void filter(ClientRequestContext request) {
         request.setProperty(START_NANOS, System.nanoTime());
@@ -45,6 +50,13 @@ public class ExternalClientLoggingFilter implements ClientRequestFilter, ClientR
             request.getHeaders().add(LogSupport.CORRELATION_HEADER, correlationId);
         }
         LOG.infof("==> %s %s", request.getMethod(), LogSupport.maskUrl(request.getUri().toString()));
+
+        if (request.hasEntity()) {
+            String body = LogSupport.preview(objectMapper, request.getEntity());
+            if (!body.isEmpty()) {
+                LOG.infof("==> request body: %s", body);
+            }
+        }
     }
 
     @Override
