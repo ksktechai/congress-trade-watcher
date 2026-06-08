@@ -6,7 +6,8 @@ skinparam shadowing false
 skinparam roundcorner 8
 skinparam ArrowColor #455A64
 skinparam ArrowFontColor #37474F
-skinparam sequenceLifeLineBorderColor #CFD8DC
+skinparam sequenceLifeLineBorderColor #607D8B
+skinparam sequenceLifeLineBorderThickness 2
 skinparam sequenceLifeLineBackgroundColor #F4F6F8
 skinparam noteBackgroundColor #FFF8E1
 skinparam noteBorderColor #E0C46C
