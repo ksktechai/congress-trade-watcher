@@ -5,6 +5,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.time.temporal.ChronoUnit;
 import nz.co.ksktech.congresstrades.client.dto.AnthropicMessageRequest;
 import nz.co.ksktech.congresstrades.client.dto.AnthropicMessageResponse;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
@@ -14,16 +15,14 @@ import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
-import java.time.temporal.ChronoUnit;
-
 /**
  * Typed client for the Anthropic Messages API.
  *
- * <p>Auth/protocol headers are supplied by {@link AnthropicHeadersFactory}. The
- * model is used <strong>only to summarise and contextualise data the app has
- * already computed</strong> — never to select stocks or predict prices.</p>
+ * <p>Auth/protocol headers are supplied by {@link AnthropicHeadersFactory}. The model is used
+ * <strong>only to summarise and contextualise data the app has already computed</strong> — never to
+ * select stocks or predict prices.
  *
- * <p>Base URL is configured via {@code quarkus.rest-client.anthropic-api.url}.</p>
+ * <p>Base URL is configured via {@code quarkus.rest-client.anthropic-api.url}.
  */
 @RegisterRestClient(configKey = "anthropic-api")
 @RegisterClientHeaders(AnthropicHeadersFactory.class)
@@ -31,12 +30,12 @@ import java.time.temporal.ChronoUnit;
 @Path("/v1")
 public interface AnthropicClient {
 
-    @POST
-    @Path("/messages")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Timeout(value = 30, unit = ChronoUnit.SECONDS)
-    @Retry(maxRetries = 2, delay = 1000)
-    @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.75, delay = 15000)
-    AnthropicMessageResponse createMessage(AnthropicMessageRequest request);
+  @POST
+  @Path("/messages")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Timeout(value = 30, unit = ChronoUnit.SECONDS)
+  @Retry(maxRetries = 2, delay = 1000)
+  @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.75, delay = 15000)
+  AnthropicMessageResponse createMessage(AnthropicMessageRequest request);
 }

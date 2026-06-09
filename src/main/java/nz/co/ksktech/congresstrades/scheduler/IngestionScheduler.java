@@ -13,36 +13,33 @@ import org.jboss.logging.Logger;
 /**
  * Periodically ingests watchlist disclosures and refreshes signals.
  *
- * <p>The cron expression comes from {@code ingestion.cron}; the source from
- * {@code ingestion.source} ({@code congress}, the free default, or
- * {@code finnhub}). In the {@code dev} and {@code test} profiles the cron is
- * {@code "off"} so local runs never auto-hit the external APIs — use
- * {@code POST /api/v1/admin/ingest} to trigger ingestion manually instead.</p>
+ * <p>The cron expression comes from {@code ingestion.cron}; the source from {@code
+ * ingestion.source} ({@code congress}, the free default, or {@code finnhub}). In the {@code dev}
+ * and {@code test} profiles the cron is {@code "off"} so local runs never auto-hit the external
+ * APIs — use {@code POST /api/v1/admin/ingest} to trigger ingestion manually instead.
  */
 @ApplicationScoped
 public class IngestionScheduler {
 
-    private static final Logger LOG = Logger.getLogger(IngestionScheduler.class);
+  private static final Logger LOG = Logger.getLogger(IngestionScheduler.class);
 
-    @Inject
-    CongressDataIngestionService congressIngestion;
+  @Inject CongressDataIngestionService congressIngestion;
 
-    @Inject
-    TradeIngestionService finnhubIngestion;
+  @Inject TradeIngestionService finnhubIngestion;
 
-    @Inject
-    SignalService signalService;
+  @Inject SignalService signalService;
 
-    @ConfigProperty(name = "ingestion.source", defaultValue = "congress")
-    String source;
+  @ConfigProperty(name = "ingestion.source", defaultValue = "congress")
+  String source;
 
-    @Scheduled(cron = "{ingestion.cron}", identity = "watchlist-ingestion")
-    void scheduledIngestion() {
-        LOG.infof("Scheduled ingestion starting (source=%s)", source);
-        IngestionResult result = "finnhub".equalsIgnoreCase(source)
-                ? finnhubIngestion.ingestWatchlist()
-                : congressIngestion.ingestWatchlist();
-        signalService.detectAndPersist();
-        LOG.infof("Scheduled ingestion finished: %s", result);
-    }
+  @Scheduled(cron = "{ingestion.cron}", identity = "watchlist-ingestion")
+  void scheduledIngestion() {
+    LOG.infof("Scheduled ingestion starting (source=%s)", source);
+    IngestionResult result =
+        "finnhub".equalsIgnoreCase(source)
+            ? finnhubIngestion.ingestWatchlist()
+            : congressIngestion.ingestWatchlist();
+    signalService.detectAndPersist();
+    LOG.infof("Scheduled ingestion finished: %s", result);
+  }
 }
