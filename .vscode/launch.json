@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Quarkus: Start and Attach (Dev Mode)",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 5005,
+            "preLaunchTask": "Quarkus Dev Mode"
+        },
+        {
+            "type": "java",
+            "name": "Quarkus: Debug (Attach to Port 5005)",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 5005
+        },
+        {
+            "type": "java",
+            "name": "Quarkus: Launch Main (Dev Profile)",
+            "request": "launch",
+            "mainClass": "nz.co.ksktech.congresstrades.Main",
+            "projectName": "congress-trade-watcher",
+            "vmArgs": "-Dquarkus.profile=dev"
+        },
+        {
+            "type": "java",
+            "name": "Quarkus: Launch Main (Prod Profile)",
+            "request": "launch",
+            "mainClass": "nz.co.ksktech.congresstrades.Main",
+            "projectName": "congress-trade-watcher",
+            "vmArgs": "-Dquarkus.profile=prod"
+        }
+    ]
+}

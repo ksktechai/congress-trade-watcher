@@ -8,7 +8,7 @@ target/
 # IDE
 .idea/
 *.iml
-.vscode/
+.vscode/settings.json
 .project
 .classpath
 .settings/
