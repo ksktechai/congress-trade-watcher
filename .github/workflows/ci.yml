@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Build & test (offline — WireMock + Testcontainers)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Check formatting (Spotless)
+        run: ./mvnw --batch-mode --no-transfer-progress spotless:check
+
+      # Docker is preinstalled on ubuntu-latest; Quarkus Dev Services starts
+      # the Postgres 16 container via Testcontainers. No Finnhub, congress.kadoa.com
+      # or LLM-provider access is needed — WireMock plays them all, and no API
+      # keys are required (they are Optional<String> in config).
+      - name: Verify
+        run: ./mvnw --batch-mode --no-transfer-progress verify
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+          if-no-files-found: ignore
